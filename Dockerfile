@@ -13,7 +13,7 @@
 #   VITE_RPC_MAINNET      — override the default Sui mainnet RPC URL (optional)
 # The access_gate packageId and PlatformConfig id are hardcoded in src/constants.ts
 # (commission enforcement) — they are NOT build args.
-FROM node:22-slim AS build
+FROM node:24-slim AS build
 
 WORKDIR /app
 
