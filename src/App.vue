@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { UiButton, UiNotice } from '@meddleware/ui'
+import { AppHeader, AppFooter, ColorModeControl, UiButton, UiNotice, useColorMode } from '@meddleware/ui'
 import type { OwnedGate } from '@meddleware/nft-gate-client'
 import { NETWORK } from './config.js'
 import { PACKAGE_ID, listMyGates } from './gates.js'
 import { useWallet } from './wallet.js'
 import CreateGateForm from './components/CreateGateForm.vue'
 import GateList from './components/GateList.vue'
+
+const isEmbedded = new URLSearchParams(window.location.search).has('embedded')
+const { mode, set } = useColorMode('dark')
 
 type Tab = 'create' | 'gates'
 const activeTab = ref<Tab>('gates')
@@ -46,13 +49,12 @@ function onCreated(): void {
 </script>
 
 <template>
-  <div class="page">
-    <header class="head">
-      <div>
-        <h1>Access Gate Operator</h1>
-        <p class="sub">Create and manage on-chain access gates on Sui ({{ NETWORK }}).</p>
-      </div>
-      <div class="wallet">
+  <div class="app" :class="{ 'app--embedded': isEmbedded }">
+    <AppHeader v-if="!isEmbedded" variant="dark">
+      <template #brand>
+        <span>Access Gate</span>
+      </template>
+      <template #actions>
         <template v-if="account">
           <span class="addr">{{ account.address.slice(0, 8) }}…{{ account.address.slice(-4) }}</span>
           <UiButton variant="ghost" @click="disconnect">Disconnect</UiButton>
@@ -62,81 +64,86 @@ function onCreated(): void {
             {{ wallets.length ? 'Connect wallet' : 'No wallet detected' }}
           </UiButton>
         </template>
-      </div>
-    </header>
+        <ColorModeControl :model-value="mode" @update:model-value="set" />
+      </template>
+    </AppHeader>
 
-    <UiNotice v-if="!deployed" type="error">
-      The access_gate contract is not deployed on {{ NETWORK }}. Switch to a supported network.
-    </UiNotice>
+    <div class="page">
+      <p class="sub">Create and manage on-chain access gates on Sui ({{ NETWORK }}).</p>
 
-    <template v-else-if="account">
-      <nav class="tabs" aria-label="Sections">
-        <button type="button" class="tab" :class="{ active: activeTab === 'gates' }" @click="activeTab = 'gates'; reloadGates()">
-          My gates
-        </button>
-        <button type="button" class="tab" :class="{ active: activeTab === 'create' }" @click="activeTab = 'create'">
-          Create gate
-        </button>
-      </nav>
+      <UiNotice v-if="!deployed" type="error">
+        The access_gate contract is not deployed on {{ NETWORK }}. Switch to a supported network.
+      </UiNotice>
 
-      <UiNotice v-if="loadError" type="error">{{ loadError }}</UiNotice>
+      <template v-else-if="account">
+        <nav class="tabs" aria-label="Sections">
+          <button type="button" class="tab" :class="{ active: activeTab === 'gates' }" @click="activeTab = 'gates'; reloadGates()">
+            My gates
+          </button>
+          <button type="button" class="tab" :class="{ active: activeTab === 'create' }" @click="activeTab = 'create'">
+            Create gate
+          </button>
+        </nav>
 
-      <section v-if="activeTab === 'gates'">
-        <GateList :gates="gates" :loading="loadingGates" @changed="reloadGates" />
-      </section>
-      <section v-else>
-        <CreateGateForm :address="account.address" @created="onCreated" />
-      </section>
-    </template>
+        <UiNotice v-if="loadError" type="error">{{ loadError }}</UiNotice>
 
-    <UiNotice v-else type="info">
-      Connect a Sui wallet to create and manage your access gates.
-    </UiNotice>
+        <section v-if="activeTab === 'gates'">
+          <GateList :gates="gates" :loading="loadingGates" @changed="reloadGates" />
+        </section>
+        <section v-else>
+          <CreateGateForm :address="account.address" @created="onCreated" />
+        </section>
+      </template>
 
-    <footer class="foot">
-      <p>© MeddleWare · <a href="https://sui.meddleware.co.uk">more SUI tools</a></p>
-    </footer>
+      <UiNotice v-else type="info">
+        Connect a Sui wallet to create and manage your access gates.
+      </UiNotice>
+    </div>
+
+    <AppFooter v-if="!isEmbedded" />
   </div>
 </template>
 
 <style scoped>
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app--embedded {
+  min-height: 100%;
+}
+
 .page {
   max-width: 720px;
   margin: 0 auto;
   padding: 2rem 1.25rem 4rem;
+  flex: 1;
 }
-.head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  flex-wrap: wrap;
+
+.app--embedded .page {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
-.head h1 {
-  margin: 0;
-  font-size: 1.8rem;
-  color: var(--text);
-}
+
 .sub {
   color: var(--muted);
-  margin: 0.25rem 0 0;
+  margin: 0.25rem 0 1.25rem;
 }
-.wallet {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
+
 .addr {
   font-family: monospace;
   font-size: 0.9rem;
-  color: var(--text);
 }
+
 .tabs {
   display: flex;
   gap: 0.25rem;
-  margin: 1.25rem 0 1rem;
+  margin: 0 0 1rem;
   border-bottom: 2px solid var(--border);
 }
+
 .tab {
   background: none;
   border: none;
@@ -147,14 +154,10 @@ function onCreated(): void {
   font-size: 0.95rem;
   color: var(--muted);
 }
+
 .tab.active {
-  border-bottom-color: var(--mw-accent-500, var(--text));
+  border-bottom-color: var(--accent);
   color: var(--text);
   font-weight: 600;
-}
-.foot {
-  margin-top: 3rem;
-  font-size: 0.85rem;
-  color: var(--muted);
 }
 </style>

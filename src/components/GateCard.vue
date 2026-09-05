@@ -43,6 +43,13 @@ function priceLabel(mist: bigint): string {
 
     <div class="actions">
       <UiButton variant="ghost" @click="open = !open">{{ open ? 'Hide' : 'Manage' }}</UiButton>
+      <a
+        class="seal-link"
+        :href="`https://sui-seal.meddleware.co.uk/?gate=${gate.gateId}`"
+        target="_blank"
+        rel="noopener"
+        title="Seal-encrypt content that only this gate's pass-holders can unlock"
+      >🔒 Add unlockable content →</a>
     </div>
 
     <div v-if="open" class="manage">
@@ -97,6 +104,18 @@ function priceLabel(mist: bigint): string {
 }
 .actions {
   margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.seal-link {
+  color: var(--accent, #c0503f);
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+.seal-link:hover {
+  text-decoration: underline;
 }
 .manage {
   margin-top: 0.75rem;
