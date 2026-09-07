@@ -13,12 +13,12 @@ export const PACKAGE_ID = ACCESS_GATE_PACKAGE_ID[NETWORK]
 
 /** List every gate the given operator address administers (via their owned AdminCaps). */
 export async function listMyGates(owner: string): Promise<OwnedGate[]> {
-  return fetchOwnedGates(getSuiClient(NETWORK), owner, PACKAGE_ID)
+  return fetchOwnedGates(getSuiClient(), owner, PACKAGE_ID)
 }
 
 /** Re-read one gate's on-chain state (after a management tx), merging back its known adminCapId. */
 export async function refreshGate(gate: OwnedGate): Promise<OwnedGate | null> {
-  const fresh = await fetchGate(getSuiClient(NETWORK), gate.gateId)
+  const fresh = await fetchGate(getSuiClient(), gate.gateId)
   return fresh ? { ...fresh, adminCapId: gate.adminCapId } : null
 }
 
@@ -34,7 +34,7 @@ export function adminContext(gate: OwnedGate): GateAdminContext {
  * @throws {Error} if no wallet is connected or the wallet rejects/execution fails.
  */
 export async function executeTx(tx: Transaction): Promise<string> {
-  const executor = await buildExecutor(NETWORK)
+  const executor = await buildExecutor()
   const { digest } = await executor.signAndExecute(tx)
   await executor.waitForTransaction(digest).catch(() => {})
   return digest
