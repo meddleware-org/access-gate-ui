@@ -1,138 +1,45 @@
-// Minimal Sui wallet integration on @mysten/wallet-standard (dapp-kit is React-only).
-// Discovers wallets, connects, and adapts the connected wallet into a transaction executor.
-// Module singleton — all callers share one wallet/account state.
-import { markRaw, readonly, ref, shallowRef } from 'vue'
-import { getWallets, isWalletWithRequiredFeatureSet } from '@mysten/wallet-standard'
-import type { Wallet, WalletAccount } from '@mysten/wallet-standard'
-import { SuiJsonRpcClient } from '@mysten/sui/jsonRpc'
-import type { Transaction } from '@mysten/sui/transactions'
+// Thin access-gate-ui shim over the shared @meddleware/wallet-adapter singleton.
+//
+// The adapter is network-agnostic (RPC URL passed per call); this shim binds access-gate-ui's
+// RPC_URLS so call sites keep the one-arg ergonomics (`getSuiClient(NETWORK)` /
+// `buildExecutor(NETWORK)`). Because the adapter is a module singleton, the wallet connection is
+// shared with any other tool view rendered in the same window (e.g. the dashboard).
+import {
+  useWallet as useWalletBase,
+  getSuiClient as getSuiClientBase,
+  buildExecutor as buildExecutorBase,
+} from '@meddleware/wallet-adapter'
+import type { Executor } from '@meddleware/wallet-adapter'
 import type { SuiNetwork } from './config.js'
 import { RPC_URLS } from './config.js'
 
-const REQUIRED_FEATURES = ['standard:connect', 'sui:signTransaction'] as const
+export type { Executor }
 
-const wallets = shallowRef<Wallet[]>([])
-const currentWallet = shallowRef<Wallet | null>(null)
-const account = shallowRef<WalletAccount | null>(null)
-const connecting = ref(false)
-const error = ref<string | null>(null)
-
-const clients = new Map<SuiNetwork, SuiJsonRpcClient>()
-/** Return a memoised {@link SuiJsonRpcClient} for the network (one instance per network). */
-export function getSuiClient(network: SuiNetwork): SuiJsonRpcClient {
-  let c = clients.get(network)
-  if (!c) {
-    c = new SuiJsonRpcClient({ url: RPC_URLS[network], network })
-    clients.set(network, c)
-  }
-  return c
+/** Memoised Sui JSON-RPC client for the network, using access-gate-ui's configured RPC URL. */
+export function getSuiClient(network: SuiNetwork) {
+  return getSuiClientBase(network, RPC_URLS[network])
 }
 
-function refreshWallets(): void {
-  // markRaw: extension Wallet objects expose name/icon as ES-private-field getters
-  // that throw when accessed through a Vue reactive Proxy.
-  wallets.value = getWallets()
-    .get()
-    .filter((w) => isWalletWithRequiredFeatureSet(w, [...REQUIRED_FEATURES]))
-    .map((w) => markRaw(w))
-}
-
-let initialised = false
-function init(): void {
-  if (initialised) return
-  initialised = true
-  const api = getWallets()
-  refreshWallets()
-  api.on('register', refreshWallets)
-  api.on('unregister', refreshWallets)
-}
-
-async function connect(wallet: Wallet): Promise<void> {
-  error.value = null
-  connecting.value = true
-  try {
-    const feature = wallet.features['standard:connect'] as {
-      connect: () => Promise<{ accounts: readonly WalletAccount[] }>
-    }
-    const { accounts } = await feature.connect()
-    if (!accounts.length) throw new Error('Wallet returned no accounts.')
-    currentWallet.value = markRaw(wallet)
-    account.value = markRaw(accounts[0])
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
-    throw e
-  } finally {
-    connecting.value = false
-  }
-}
-
-function disconnect(): void {
-  const disc = currentWallet.value?.features['standard:disconnect'] as
-    | { disconnect?: () => Promise<void> }
-    | undefined
-  void disc?.disconnect?.()
-  currentWallet.value = null
-  account.value = null
-}
-
-/** Transaction executor bound to the connected wallet: sign+execute a PTB and await finality. */
-export interface Executor {
-  address: string
-  signAndExecute(tx: Transaction): Promise<{ digest: string }>
-  waitForTransaction(digest: string): Promise<unknown>
-}
-
-/** Build an executor bound to the connected wallet + network. */
-export async function buildExecutor(network: SuiNetwork): Promise<Executor> {
-  const wallet = currentWallet.value
-  const acct = account.value
-  if (!wallet || !acct) throw new Error('Connect a wallet first.')
-  const client = getSuiClient(network)
-  const chain = `sui:${network}` as const
-
-  const signFeature = wallet.features['sui:signTransaction'] as {
-    signTransaction: (input: {
-      transaction: Transaction
-      account: WalletAccount
-      chain: `sui:${string}`
-    }) => Promise<{ bytes: string; signature: string }>
-  }
-
-  return {
-    address: acct.address,
-    async signAndExecute(tx: Transaction): Promise<{ digest: string }> {
-      const { bytes, signature } = await signFeature.signTransaction({
-        transaction: tx,
-        account: acct,
-        chain,
-      })
-      const res = await client.executeTransactionBlock({
-        transactionBlock: bytes,
-        signature,
-        options: { showEffects: true },
-      })
-      return { digest: res.digest }
-    },
-    async waitForTransaction(digest: string): Promise<unknown> {
-      return client.waitForTransaction({ digest })
-    },
-  }
+/** Build a transaction executor bound to the connected wallet + access-gate-ui's RPC URL. */
+export function buildExecutor(network: SuiNetwork): Promise<Executor> {
+  return buildExecutorBase(network, RPC_URLS[network])
 }
 
 /**
- * Wallet composable: discovers wallets, exposes reactive connection state, and provides
- * `connect` / `disconnect` / `buildExecutor`. Module singleton — all callers share one state.
+ * Wallet composable bound to access-gate-ui's network config. Delegates to the shared adapter
+ * singleton; gate management needs `sui:signTransaction` so it's requested for discovery.
  */
 export function useWallet() {
-  init()
+  const base = useWalletBase({ requiredFeatures: ['sui:signTransaction'] })
   return {
-    wallets: readonly(wallets),
-    currentWallet: readonly(currentWallet),
-    account: readonly(account),
-    connecting: readonly(connecting),
-    error: readonly(error),
-    connect,
-    disconnect,
+    wallets: base.wallets,
+    currentWallet: base.currentWallet,
+    account: base.account,
+    connecting: base.connecting,
+    error: base.error,
+    connect: base.connect,
+    disconnect: base.disconnect,
+    getSuiClient,
     buildExecutor,
   }
 }

@@ -19,8 +19,11 @@ the main Meddleware dashboard alongside the other tools.
   `constants.ts` (same deployment). Gates are always created under this package, so every
   purchase routes the 20 bps commission to Meddleware. The package ID is **not** exposed as an
   env var or UI field. Do not make it configurable.
-- **Wallet-agnostic.** Wallet access goes through `src/wallet.ts` (wallet-standard). Do not add a
-  specific wallet adapter.
+- **Wallet-agnostic + shared.** Wallet access goes through `src/wallet.ts`, a thin shim over the
+  shared `@meddleware/wallet-adapter` singleton (binds this app's `RPC_URLS`). The singleton means
+  that when `AccessGateView` is embedded in the dashboard alongside other tool views, they all
+  share one connection. Do not reintroduce a local wallet-standard implementation or a specific
+  wallet adapter.
 - **Operator-configurable env is only network/RPC.** `VITE_NETWORK`, `VITE_RPC_TESTNET/MAINNET`.
   No commission or package knobs.
 
@@ -30,10 +33,21 @@ the main Meddleware dashboard alongside the other tools.
 | --- | --- |
 | `src/constants.ts` | Hardcoded package + PlatformConfig ids; `accessGateNftType` |
 | `src/config.ts` | `SuiNetwork`, `NETWORK`, `RPC_URLS` (from env) |
-| `src/wallet.ts` | wallet-standard connect + `Executor` (`buildExecutor`, `getSuiClient`) |
+| `src/wallet.ts` | Shim over `@meddleware/wallet-adapter` binding this app's `RPC_URLS`; re-exports `useWallet` / `getSuiClient` / `buildExecutor` / `Executor` |
 | `src/gates.ts` | Binds the network + hardcoded package to nft-gate-client: `listMyGates`, `refreshGate`, `adminContext`, `executeTx` |
-| `src/App.vue` | Shell: wallet, tabs (My gates / Create gate), gate loading |
+| `src/App.vue` | Standalone shell only: `AppHeader` (+ wallet connect, `ColorModeControl`) + `<AccessGateView>` + `AppFooter` |
+| `src/components/AccessGateView.vue` | Core tool UI (tabs, gate loading via an `account` watcher). Exported from `src/index.ts` for inline embedding. |
+| `src/index.ts` | Library entry — exports `AccessGateView` for the dashboard to render inline |
 | `src/components/*` | `CreateGateForm`, `GateList`, `GateCard`, `GateSettingsPanel`, `AirdropForm`, `FreezeGateButton` |
+
+## Dual app + library
+
+This package is **both** a standalone SPA (`App.vue` + `main.ts`, `vite build`) and a library
+(`src/index.ts` exports `AccessGateView`, resolved via `"exports"`). The dashboard imports
+`AccessGateView` and wraps it in its own shell + shared wallet. Gate loading is driven by an
+`account` watcher in the view, so it works whether the connection is made from this app's header
+(standalone) or the dashboard's shared control (embedded). Keep the core UI in `AccessGateView.vue`
+(shell-free); `App.vue` must remain a thin shell.
 
 ## Data flow
 

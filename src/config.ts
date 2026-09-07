@@ -11,11 +11,11 @@ const env = (import.meta as unknown as { env?: Record<string, string | undefined
 export const NETWORK: SuiNetwork = (env.VITE_NETWORK as SuiNetwork) || 'testnet'
 
 /**
- * JSON-RPC endpoint used to build + execute gate transactions and read gate state.
- * NOTE: this is JSON-RPC — the public testnet fullnode serves gRPC only, so a JSON-RPC-capable
- * endpoint is used for testnet by default.
+ * gRPC-web endpoint used to build + execute gate transactions and read gate state. The Sui SDK's
+ * JSON-RPC client is deprecated, so this must be a gRPC-web-capable endpoint (the Mysten public
+ * fullnodes serve gRPC-web at :443 via the browser Fetch transport).
  */
 export const RPC_URLS: Record<SuiNetwork, string> = {
-  testnet: env.VITE_RPC_TESTNET || 'https://sui-testnet-rpc.publicnode.com',
+  testnet: env.VITE_RPC_TESTNET || 'https://fullnode.testnet.sui.io:443',
   mainnet: env.VITE_RPC_MAINNET || 'https://fullnode.mainnet.sui.io:443',
 }
