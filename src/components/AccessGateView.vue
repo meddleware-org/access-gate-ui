@@ -8,6 +8,7 @@
 // is made from this app's own header (standalone) or the dashboard's shared control (embedded).
 import { ref, watch } from 'vue'
 import { UiNotice } from '@meddleware/ui'
+import { WalletGuard } from '@meddleware/wallet-adapter'
 import type { OwnedGate } from '@meddleware/nft-gate-client'
 import { NETWORK } from '../config.js'
 import { PACKAGE_ID, listMyGates } from '../gates.js'
@@ -64,7 +65,7 @@ function onCreated(): void {
       The access_gate contract is not deployed on {{ NETWORK }}. Switch to a supported network.
     </UiNotice>
 
-    <template v-else-if="account">
+    <WalletGuard v-else message="Connect a Sui wallet to create and manage your access gates.">
       <nav class="tabs" aria-label="Sections">
         <button type="button" class="tab" :class="{ active: activeTab === 'gates' }" @click="activeTab = 'gates'; reloadGates()">
           My gates
@@ -80,13 +81,9 @@ function onCreated(): void {
         <GateList :gates="gates" :loading="loadingGates" @changed="reloadGates" />
       </section>
       <section v-else>
-        <CreateGateForm :address="account.address" @created="onCreated" />
+        <CreateGateForm :address="account!.address" @created="onCreated" />
       </section>
-    </template>
-
-    <UiNotice v-else type="info">
-      Connect a Sui wallet to create and manage your access gates.
-    </UiNotice>
+    </WalletGuard>
   </div>
 </template>
 
