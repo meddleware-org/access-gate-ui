@@ -1,8 +1,12 @@
 <script setup lang="ts">
 // Standalone shell for the Access Gate SPA: app header + footer wrapping the core tool view.
 // The core UI lives in AccessGateView.vue (also exported for inline embedding in the dashboard).
-import { AppHeader, AppFooter, ColorModeControl, UiButton, CopyableAddress, useColorMode } from '@meddleware/ui'
+import {
+  AppHeader, AppFooter, ColorModeControl, UiButton, CopyableAddress, ExplorerLink,
+  suiExplorerUrl, useColorMode,
+} from '@meddleware/ui'
 import { useWallet } from './wallet.js'
+import { NETWORK } from './config.js'
 import AccessGateView from './components/AccessGateView.vue'
 
 const { mode, set } = useColorMode('dark')
@@ -22,7 +26,9 @@ async function onConnect(): Promise<void> {
       </template>
       <template #actions>
         <template v-if="account">
-          <CopyableAddress :address="account.address" />
+          <CopyableAddress :address="account.address">
+            <ExplorerLink :href="suiExplorerUrl('account', account.address, NETWORK)" :value="account.address" />
+          </CopyableAddress>
           <UiButton variant="ghost" @click="disconnect">Disconnect</UiButton>
         </template>
         <template v-else>
