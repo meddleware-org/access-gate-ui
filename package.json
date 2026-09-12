@@ -1,6 +1,6 @@
 {
   "name": "@meddleware/access-gate-ui",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Operator console for creating and managing on-chain Sui access gates — create gates, configure settings, airdrop NFTs, and freeze gates via a wallet-connected SPA.",
   "author": "Meddleware <dev@meddleware.co.uk>",
   "license": "0BSD",

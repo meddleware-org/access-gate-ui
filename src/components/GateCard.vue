@@ -34,7 +34,7 @@ function priceLabel(mist: bigint): string {
       </div>
       <div class="badges">
         <span class="badge">{{ priceLabel(gate.priceMist) }}</span>
-        <span class="badge">{{ gate.defaultUses === 0n ? 'Unlimited' : `${gate.defaultUses} uses` }}</span>
+        <span class="badge">{{ gate.defaultUses === 0n ? 'Unlimited' : `${gate.defaultUses} credits` }}</span>
         <span v-if="gate.soulbound" class="badge">Soulbound</span>
         <span v-if="gate.paused" class="badge badge--warn">Paused</span>
         <span v-if="gate.frozen" class="badge badge--warn">Frozen</span>

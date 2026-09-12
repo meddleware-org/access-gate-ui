@@ -68,9 +68,9 @@ async function submit(): Promise<void> {
       </label>
 
       <label class="field">
-        <span>Default uses</span>
+        <span>Default credits</span>
         <input v-model="defaultUses" type="number" min="0" step="1" />
-        <small>0 = unlimited pass; N = single-use NFT with N uses.</small>
+        <small>0 = unlimited pass; N = NFT granting N upload credits.</small>
       </label>
 
       <label class="check">
@@ -80,7 +80,7 @@ async function submit(): Promise<void> {
 
       <label class="check">
         <input v-model="autoBurnAtZero" type="checkbox" />
-        <span>Auto-burn single-use NFTs at zero uses</span>
+        <span>Auto-burn NFTs at zero credits</span>
       </label>
 
       <label class="field">

@@ -78,7 +78,7 @@ const ctx = () => adminContext(props.gate)
     </div>
 
     <div class="row">
-      <label>Default uses</label>
+      <label>Default credits</label>
       <input v-model="defaultUses" type="number" min="0" step="1" />
       <UiButton variant="secondary" :disabled="busy !== null" @click="run('uses', () => buildSetDefaultUsesTx(ctx(), BigInt(defaultUses || '0')))">
         {{ busy === 'uses' ? '…' : 'Update' }}
