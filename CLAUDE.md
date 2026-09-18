@@ -70,3 +70,23 @@ confirmation. Keep that guard.
 - Do not add accounting/price-derivation logic — on-chain is the source of truth.
 - Do not expose the platform (Meddleware-only) setters `set_platform_treasury` /
   `set_commission_bps` in this operator app.
+
+---
+
+## Deferred documentation — NOT for the `docs.` website (planned here per Part 0.4)
+
+> Captured for the future **`dev.meddleware.co.uk`** subdomain and white-label offering; excluded
+> from the user-facing `docs.` site (which explains the operator console in plain terms).
+
+### `dev.` — developer integration (to write later)
+
+- **Embed `AccessGateView`** (`import { AccessGateView } from '@meddleware/access-gate-ui'`) with the
+  shared `@meddleware/wallet-adapter`; the dual app+library contract and the `account`-watcher data
+  flow. SDK-level builders/reads are documented in `@meddleware/nft-gate-client`.
+
+### White-label operator path (to write later)
+
+- Operators running the console for **their own gates** under the shared platform: what is
+  operator-controlled (gate config, airdrops, freeze) vs fixed (the hardcoded package id + 20 bps
+  commission routing to Meddleware — deliberately not configurable). Branding seams
+  (`@meddleware/design-tokens`, `AppHeader`). Note the platform-only setters are intentionally hidden.
