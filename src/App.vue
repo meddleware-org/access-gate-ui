@@ -11,6 +11,7 @@ import AccessGateView from './components/AccessGateView.vue'
 
 const { mode, set } = useColorMode('dark')
 const DOCS_URL = import.meta.env.VITE_DOCS_URL || 'https://docs.meddleware.co.uk/blockchain/sui/access-gate/'
+const DEV_URL  = import.meta.env.VITE_DEV_URL  || 'https://dev.meddleware.co.uk/sui/access-gate/'
 const { wallets, account, connect, disconnect } = useWallet()
 
 async function onConnect(): Promise<void> {
@@ -43,7 +44,7 @@ async function onConnect(): Promise<void> {
 
     <AccessGateView />
 
-    <AppFooter :docs-url="DOCS_URL" />
+    <AppFooter :docs-url="DOCS_URL" :dev-url="DEV_URL" />
   </div>
 </template>
 

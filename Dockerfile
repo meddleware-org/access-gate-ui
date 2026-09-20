@@ -17,10 +17,10 @@ FROM node:24-slim AS build
 
 WORKDIR /app
 
-# Copy the manifest first for layer-cache efficiency.
-COPY package.json ./
+# Copy the manifest + lockfile first for layer-cache efficiency.
+COPY package.json package-lock.json ./
 
-RUN npm install
+RUN npm ci
 
 COPY . .
 
