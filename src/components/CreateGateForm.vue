@@ -2,7 +2,7 @@
 // Create a new access gate. Builds `create_gate` via @meddleware/nft-gate-client under the
 // hardcoded Meddleware package (commission enforced), then emits the tx digest on success.
 import { ref } from 'vue'
-import { UiCard, UiButton, UiNotice } from '@meddleware/ui'
+import { UiCard, UiButton, UiNotice, UiStepper, type StepperStep } from '@meddleware/ui'
 import { buildCreateGateTx } from '@meddleware/nft-gate-client'
 import { PACKAGE_ID, executeTx } from '../gates.js'
 
@@ -24,6 +24,13 @@ const paymentRecipient = ref(props.address)
 const submitting = ref(false)
 const error = ref<string | null>(null)
 const okDigest = ref<string | null>(null)
+
+const STEPS: StepperStep[] = [
+  { id: 'economics', label: 'Economics' },
+  { id: 'appearance', label: 'Appearance' },
+  { id: 'options', label: 'Options' },
+]
+const step = ref(0)
 
 /** Convert a decimal SUI string to a MIST bigint (1 SUI = 1e9 MIST). */
 function suiToMist(sui: string): bigint {
@@ -60,53 +67,76 @@ async function submit(): Promise<void> {
 
 <template>
   <UiCard title="Create a gate">
+    <UiStepper :steps="STEPS" v-model="step" />
     <form class="form" @submit.prevent="submit">
-      <label class="field">
-        <span>Price (SUI)</span>
-        <input v-model="priceSui" type="number" min="0" step="0.000000001" inputmode="decimal" />
-        <small>0 = free gate.</small>
-      </label>
 
-      <label class="field">
-        <span>Default credits</span>
-        <input v-model="defaultUses" type="number" min="0" step="1" />
-        <small>0 = unlimited pass; N = NFT granting N upload credits.</small>
-      </label>
+      <!-- Step 0: Economics -->
+      <template v-if="step === 0">
+        <label class="field">
+          <span>Price (SUI)</span>
+          <input v-model="priceSui" type="number" min="0" step="0.000000001" inputmode="decimal" />
+          <small>0 = free gate.</small>
+        </label>
 
-      <label class="check">
-        <input v-model="soulbound" type="checkbox" />
-        <span>Soulbound (non-transferable NFTs)</span>
-      </label>
+        <label class="field">
+          <span>Default credits</span>
+          <input v-model="defaultUses" type="number" min="0" step="1" />
+          <small>0 = unlimited pass; N = NFT granting N upload credits.</small>
+        </label>
 
-      <label class="check">
-        <input v-model="autoBurnAtZero" type="checkbox" />
-        <span>Auto-burn NFTs at zero credits</span>
-      </label>
+        <label class="field">
+          <span>Payment recipient</span>
+          <input v-model="paymentRecipient" type="text" placeholder="0x…" spellcheck="false" />
+          <small>Where purchase revenue is sent (after the platform commission).</small>
+        </label>
 
-      <label class="field">
-        <span>Payment recipient</span>
-        <input v-model="paymentRecipient" type="text" placeholder="0x…" spellcheck="false" />
-        <small>Where purchase revenue is sent (after the platform commission).</small>
-      </label>
+        <div class="nav-row">
+          <UiButton type="button" @click="step++">Next</UiButton>
+        </div>
+      </template>
 
-      <label class="field">
-        <span>NFT name</span>
-        <input v-model="nftName" type="text" placeholder="My access pass" />
-      </label>
+      <!-- Step 1: Appearance -->
+      <template v-else-if="step === 1">
+        <label class="field">
+          <span>NFT name</span>
+          <input v-model="nftName" type="text" placeholder="My access pass" />
+        </label>
 
-      <label class="field">
-        <span>NFT image URL</span>
-        <input v-model="nftImageUrl" type="url" placeholder="https://…" spellcheck="false" />
-      </label>
+        <label class="field">
+          <span>NFT image URL</span>
+          <input v-model="nftImageUrl" type="url" placeholder="https://…" spellcheck="false" />
+        </label>
 
-      <label class="field">
-        <span>NFT description</span>
-        <input v-model="nftDescription" type="text" placeholder="Grants access to…" />
-      </label>
+        <label class="field">
+          <span>NFT description</span>
+          <input v-model="nftDescription" type="text" placeholder="Grants access to…" />
+        </label>
 
-      <UiButton type="submit" :disabled="submitting">
-        {{ submitting ? 'Creating…' : 'Create gate' }}
-      </UiButton>
+        <div class="nav-row">
+          <UiButton type="button" variant="secondary" @click="step--">Back</UiButton>
+          <UiButton type="button" @click="step++">Next</UiButton>
+        </div>
+      </template>
+
+      <!-- Step 2: Options + submit -->
+      <template v-else-if="step === 2">
+        <label class="check">
+          <input v-model="soulbound" type="checkbox" />
+          <span>Soulbound (non-transferable NFTs)</span>
+        </label>
+
+        <label class="check">
+          <input v-model="autoBurnAtZero" type="checkbox" />
+          <span>Auto-burn NFTs at zero credits</span>
+        </label>
+
+        <div class="nav-row">
+          <UiButton type="button" variant="secondary" @click="step--">Back</UiButton>
+          <UiButton type="submit" :disabled="submitting">
+            {{ submitting ? 'Creating…' : 'Create gate' }}
+          </UiButton>
+        </div>
+      </template>
 
       <UiNotice v-if="error" type="error">{{ error }}</UiNotice>
       <UiNotice v-else-if="okDigest" type="ok">Gate created. Tx: {{ okDigest }}</UiNotice>
@@ -148,5 +178,11 @@ async function submit(): Promise<void> {
   gap: 0.5rem;
   font-size: 0.9rem;
   color: var(--text);
+}
+.nav-row {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+  margin-top: 0.4rem;
 }
 </style>
