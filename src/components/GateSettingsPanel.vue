@@ -62,48 +62,60 @@ const ctx = () => adminContext(props.gate)
 <template>
   <div class="settings">
     <div class="row">
-      <label>Price (SUI)</label>
-      <input v-model="priceSui" type="number" min="0" step="0.000000001" />
+      <label>
+        <span>Price (SUI)</span>
+        <input v-model="priceSui" type="number" min="0" step="0.000000001" />
+      </label>
       <UiButton variant="secondary" :disabled="busy !== null" @click="run('price', () => buildSetPriceTx(ctx(), suiToMist(priceSui)))">
         {{ busy === 'price' ? '…' : 'Update' }}
       </UiButton>
     </div>
 
     <div class="row">
-      <label>Payment recipient</label>
-      <input v-model="paymentRecipient" type="text" placeholder="0x…" spellcheck="false" />
+      <label>
+        <span>Payment recipient</span>
+        <input v-model="paymentRecipient" type="text" placeholder="0x…" spellcheck="false" />
+      </label>
       <UiButton variant="secondary" :disabled="busy !== null" @click="run('recipient', () => buildSetPaymentRecipientTx(ctx(), paymentRecipient.trim()))">
         {{ busy === 'recipient' ? '…' : 'Update' }}
       </UiButton>
     </div>
 
     <div class="row">
-      <label>Default credits</label>
-      <input v-model="defaultUses" type="number" min="0" step="1" />
+      <label>
+        <span>Default credits</span>
+        <input v-model="defaultUses" type="number" min="0" step="1" />
+      </label>
       <UiButton variant="secondary" :disabled="busy !== null" @click="run('uses', () => buildSetDefaultUsesTx(ctx(), BigInt(defaultUses || '0')))">
         {{ busy === 'uses' ? '…' : 'Update' }}
       </UiButton>
     </div>
 
     <div class="row">
-      <label>NFT name</label>
-      <input v-model="nftName" type="text" />
+      <label>
+        <span>NFT name</span>
+        <input v-model="nftName" type="text" />
+      </label>
       <UiButton variant="secondary" :disabled="busy !== null" @click="run('name', () => buildSetNftNameTx(ctx(), nftName))">
         {{ busy === 'name' ? '…' : 'Update' }}
       </UiButton>
     </div>
 
     <div class="row">
-      <label>NFT image URL</label>
-      <input v-model="nftImageUrl" type="url" spellcheck="false" />
+      <label>
+        <span>NFT image URL</span>
+        <input v-model="nftImageUrl" type="url" spellcheck="false" />
+      </label>
       <UiButton variant="secondary" :disabled="busy !== null" @click="run('image', () => buildSetNftImageUrlTx(ctx(), nftImageUrl))">
         {{ busy === 'image' ? '…' : 'Update' }}
       </UiButton>
     </div>
 
     <div class="row">
-      <label>NFT description</label>
-      <input v-model="nftDescription" type="text" />
+      <label>
+        <span>NFT description</span>
+        <input v-model="nftDescription" type="text" />
+      </label>
       <UiButton variant="secondary" :disabled="busy !== null" @click="run('desc', () => buildSetNftDescriptionTx(ctx(), nftDescription))">
         {{ busy === 'desc' ? '…' : 'Update' }}
       </UiButton>
@@ -133,11 +145,19 @@ const ctx = () => adminContext(props.gate)
 }
 .row {
   display: grid;
-  grid-template-columns: 9rem 1fr auto;
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: 0.5rem;
 }
+/* The input nests inside its label (implicit association); the label lays out its
+   caption + control on one line, matching the previous caption/input columns. */
 .row label {
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  align-items: center;
+  gap: 0.5rem;
+}
+.row label > span {
   font-size: 0.85rem;
   color: var(--muted);
 }

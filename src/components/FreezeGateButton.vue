@@ -46,7 +46,10 @@ async function freeze(): Promise<void> {
         airdrops for this gate. Purchases and consumption continue. Type <code>FREEZE</code> to confirm.
       </UiNotice>
       <div class="line">
-        <input v-model="confirmText" type="text" placeholder="FREEZE" spellcheck="false" />
+        <label class="field">
+          <span class="visually-hidden">Type FREEZE to confirm</span>
+          <input v-model="confirmText" type="text" placeholder="FREEZE" spellcheck="false" />
+        </label>
         <UiButton variant="danger" :disabled="busy || confirmText !== 'FREEZE'" @click="freeze">
           {{ busy ? 'Freezing…' : 'Confirm freeze' }}
         </UiButton>
@@ -78,5 +81,18 @@ async function freeze(): Promise<void> {
   background: var(--surface);
   color: var(--text);
   font-size: 0.9rem;
+}
+/* The confirm field's caption is redundant with the notice above, so it is exposed
+   to assistive tech only. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 </style>

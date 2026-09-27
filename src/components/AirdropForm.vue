@@ -36,9 +36,11 @@ async function airdrop(): Promise<void> {
 
 <template>
   <div class="airdrop">
-    <label>Airdrop access to</label>
     <div class="line">
-      <input v-model="recipient" type="text" placeholder="0x…" spellcheck="false" />
+      <label class="field">
+        <span>Airdrop access to</span>
+        <input v-model="recipient" type="text" placeholder="0x…" spellcheck="false" />
+      </label>
       <UiButton variant="secondary" :disabled="busy || !recipient" @click="airdrop">
         {{ busy ? 'Sending…' : 'Airdrop' }}
       </UiButton>
@@ -54,16 +56,25 @@ async function airdrop(): Promise<void> {
   flex-direction: column;
   gap: 0.4rem;
 }
-.airdrop > label {
+/* The input nests inside its label (implicit association); caption sits above it. */
+.field {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.field > span {
   font-size: 0.85rem;
   color: var(--muted);
 }
 .line {
   display: flex;
   gap: 0.5rem;
+  align-items: flex-end;
 }
 .line input {
-  flex: 1;
+  width: 100%;
   min-width: 0;
   padding: 0.4rem 0.55rem;
   border: 1px solid var(--border);
