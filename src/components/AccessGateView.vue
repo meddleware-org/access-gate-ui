@@ -7,7 +7,7 @@
 // Gate loading is driven by watching the connected account, so it works whether the connection
 // is made from this app's own header (standalone) or the dashboard's shared control (embedded).
 import { ref, watch } from 'vue'
-import { AppTabNav, UiNotice, UiToolIntro, type AppTab } from '@meddleware/ui'
+import { AppTabNav, UiNotice, UiTabPanel, UiToolIntro, type AppTab } from '@meddleware/ui'
 import { WalletGuard } from '@meddleware/wallet-adapter'
 import type { OwnedGate } from '@meddleware/nft-gate-client'
 import { NETWORK } from '../config.js'
@@ -73,16 +73,27 @@ function onCreated(): void {
   </UiNotice>
 
   <WalletGuard v-else message="Connect a Sui wallet to create and manage your access gates.">
-    <AppTabNav :tabs="TABS" :model-value="activeTab" aria-label="Sections" style="margin: 0 0 1rem"
-      @update:model-value="onTabChange" />
+    <AppTabNav
+      :tabs="TABS"
+      :model-value="activeTab"
+      id-prefix="access-gate"
+      aria-label="Sections"
+      class="access-gate__tabs"
+      @update:model-value="onTabChange"
+    />
 
-    <UiNotice v-if="loadError" type="error">{{ loadError }}</UiNotice>
-
-    <section v-if="activeTab === 'gates'">
-      <GateList :gates="gates" :loading="loadingGates" @changed="reloadGates" />
-    </section>
-    <section v-else>
-      <CreateGateForm :address="account!.address" @created="onCreated" />
-    </section>
+    <UiTabPanel id-prefix="access-gate" :tab="activeTab">
+      <template v-if="activeTab === 'gates'">
+        <UiNotice v-if="loadError" type="error">{{ loadError }}</UiNotice>
+        <GateList :gates="gates" :loading="loadingGates" @changed="reloadGates" />
+      </template>
+      <CreateGateForm v-else :address="account!.address" @created="onCreated" />
+    </UiTabPanel>
   </WalletGuard>
 </template>
+
+<style scoped>
+.access-gate__tabs {
+  margin: 0 0 1rem;
+}
+</style>
