@@ -7,7 +7,7 @@
 // Gate loading is driven by watching the connected account, so it works whether the connection
 // is made from this app's own header (standalone) or the dashboard's shared control (embedded).
 import { ref, watch } from 'vue'
-import { AppTabNav, UiNotice, type AppTab } from '@meddleware/ui'
+import { AppTabNav, UiNotice, UiToolIntro, type AppTab } from '@meddleware/ui'
 import { WalletGuard } from '@meddleware/wallet-adapter'
 import type { OwnedGate } from '@meddleware/nft-gate-client'
 import { NETWORK } from '../config.js'
@@ -66,39 +66,23 @@ function onCreated(): void {
 </script>
 
 <template>
-  <div class="page">
-    <p class="sub">Create and manage on-chain access gates on Sui ({{ NETWORK }}).</p>
+  <UiToolIntro>Create and manage on-chain access gates on Sui ({{ NETWORK }}).</UiToolIntro>
 
-    <UiNotice v-if="!deployed" type="error">
-      The access_gate contract is not deployed on {{ NETWORK }}. Switch to a supported network.
-    </UiNotice>
+  <UiNotice v-if="!deployed" type="error">
+    The access_gate contract is not deployed on {{ NETWORK }}. Switch to a supported network.
+  </UiNotice>
 
-    <WalletGuard v-else message="Connect a Sui wallet to create and manage your access gates.">
-      <AppTabNav :tabs="TABS" :model-value="activeTab" aria-label="Sections" style="margin: 0 0 1rem" @update:model-value="onTabChange" />
+  <WalletGuard v-else message="Connect a Sui wallet to create and manage your access gates.">
+    <AppTabNav :tabs="TABS" :model-value="activeTab" aria-label="Sections" style="margin: 0 0 1rem"
+      @update:model-value="onTabChange" />
 
-      <UiNotice v-if="loadError" type="error">{{ loadError }}</UiNotice>
+    <UiNotice v-if="loadError" type="error">{{ loadError }}</UiNotice>
 
-      <section v-if="activeTab === 'gates'">
-        <GateList :gates="gates" :loading="loadingGates" @changed="reloadGates" />
-      </section>
-      <section v-else>
-        <CreateGateForm :address="account!.address" @created="onCreated" />
-      </section>
-    </WalletGuard>
-  </div>
+    <section v-if="activeTab === 'gates'">
+      <GateList :gates="gates" :loading="loadingGates" @changed="reloadGates" />
+    </section>
+    <section v-else>
+      <CreateGateForm :address="account!.address" @created="onCreated" />
+    </section>
+  </WalletGuard>
 </template>
-
-<style scoped>
-.page {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 2rem 1.25rem 4rem;
-  flex: 1;
-}
-
-.sub {
-  color: var(--muted);
-  margin: 0.25rem 0 1.25rem;
-}
-
-</style>
