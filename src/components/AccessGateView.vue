@@ -17,10 +17,10 @@ import CreateGateForm from './CreateGateForm.vue'
 import GateList from './GateList.vue'
 
 const TABS: AppTab[] = [
-  { id: 'gates', label: 'My gates' },
   { id: 'create', label: 'Create gate' },
+  { id: 'gates', label: 'My gates' },
 ]
-const activeTab = ref<string>('gates')
+const activeTab = ref<string>('create')
 
 function onTabChange(id: string): void {
   activeTab.value = id
@@ -87,7 +87,7 @@ function onCreated(): void {
         <UiNotice v-if="loadError" type="error">{{ loadError }}</UiNotice>
         <GateList :gates="gates" :loading="loadingGates" @changed="reloadGates" />
       </template>
-      <CreateGateForm v-else :address="account!.address" @created="onCreated" />
+      <CreateGateForm v-else-if="account" :address="account.address" @created="onCreated" />
     </UiTabPanel>
   </WalletGuard>
 </template>
