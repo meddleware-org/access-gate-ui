@@ -1,11 +1,11 @@
 <script setup lang="ts">
-// Create a new access gate. Builds `create_gate` (or `create_gate_with_policy` when the operator
-// configured restrictions) via @meddleware/nft-gate-client under the hardcoded Meddleware package
-// (commission enforced), enforcing the operator's minimum price, then emits the tx digest.
+// Create a new access gate via @meddleware/nft-gate-client under the hardcoded Meddleware package:
+// `create_gate` for a paid gate (at or above the minimum paid price) or `create_free_gate` (paying the
+// platform's free-gate fee), with the operator's immutable GatePolicy. Emits the tx digest.
 import { onMounted, ref } from 'vue'
 import { UiCard, UiButton, UiNotice, UiStepper, type StepperStep } from '@meddleware/ui'
 import { buildCreateGateTx, isRestrictivePolicy } from '@meddleware/nft-gate-client'
-import { PACKAGE_ID, executeTx, minimumGatePriceMist } from '../gates.js'
+import { PACKAGE_ID, PLATFORM_CONFIG_ID, executeTx, getPlatformConfig, minimumGatePriceMist } from '../gates.js'
 import { GATE_ALLOW_FREE, GATE_POLICY } from '../config.js'
 import { gatePriceError, mistToSui, suiToMist } from '../pricing.js'
 
@@ -35,15 +35,18 @@ const STEPS: StepperStep[] = [
 ]
 const step = ref(0)
 
-/** Operator minimum non-zero price (MIST); `null` until resolved (or if it could not be read). */
+/** Minimum paid price and free-gate fee (MIST); `null` until read (or if they could not be). */
 const minPriceMist = ref<bigint | null>(null)
+const freeGateFeeMist = ref<bigint | null>(null)
 const restricted = isRestrictivePolicy(GATE_POLICY)
 
 onMounted(async () => {
   try {
-    minPriceMist.value = await minimumGatePriceMist()
+    const platform = await getPlatformConfig()
+    minPriceMist.value = minimumGatePriceMist(platform)
+    freeGateFeeMist.value = platform.freeGateFeeMist
   } catch {
-    // Resolved again (and surfaced) at submit time.
+    // Read again (and surfaced) at submit time.
   }
 })
 
@@ -53,12 +56,14 @@ async function submit(): Promise<void> {
   submitting.value = true
   try {
     const priceMist = suiToMist(priceSui.value)
-    // Re-resolve at submit so the floor reflects the live commission (fails closed if unreadable).
-    const minMist = await minimumGatePriceMist()
+    // Re-read at submit so the floor and fee reflect the live platform (fails closed if unreadable).
+    const platform = await getPlatformConfig()
+    const minMist = minimumGatePriceMist(platform)
     minPriceMist.value = minMist
+    freeGateFeeMist.value = platform.freeGateFeeMist
     const priceError = gatePriceError(priceMist, minMist, GATE_ALLOW_FREE)
     if (priceError) throw new Error(priceError)
-    const tx = buildCreateGateTx(PACKAGE_ID, {
+    const tx = buildCreateGateTx(PACKAGE_ID, PLATFORM_CONFIG_ID, {
       priceMist,
       paymentRecipient: paymentRecipient.value.trim(),
       defaultUses: BigInt(defaultUses.value || '0'),
@@ -68,6 +73,7 @@ async function submit(): Promise<void> {
       nftImageUrl: nftImageUrl.value,
       nftDescription: nftDescription.value,
       policy: GATE_POLICY,
+      freeGateFeeMist: platform.freeGateFeeMist,
     })
     const digest = await executeTx(tx)
     okDigest.value = digest
@@ -91,7 +97,10 @@ async function submit(): Promise<void> {
           <span>Price (SUI)</span>
           <input v-model="priceSui" type="number" min="0" step="0.000000001" inputmode="decimal" />
           <small>
-            <template v-if="GATE_ALLOW_FREE">0 = free gate. </template>
+            <template v-if="GATE_ALLOW_FREE">
+              0 = free gate<template v-if="freeGateFeeMist !== null && freeGateFeeMist > 0n">
+                (one-off fee of {{ mistToSui(freeGateFeeMist) }} SUI)</template>.
+            </template>
             <template v-if="minPriceMist !== null && minPriceMist > 0n">
               Minimum {{ mistToSui(minPriceMist) }} SUI.
             </template>
@@ -156,6 +165,7 @@ async function submit(): Promise<void> {
             <li v-if="GATE_POLICY.freezeRequiresUnpaused">The gate can't be frozen while paused.</li>
             <li v-if="GATE_POLICY.lockCommissionOnFreeze">Freezing locks in the current platform commission.</li>
             <li v-if="GATE_POLICY.pauseBlocksDecryption">Pausing the gate also stops Seal-protected content from being unlocked.</li>
+            <li v-if="GATE_POLICY.pauseBlocksAccess">Pausing the gate also stops passes from being used (e.g. relay uploads).</li>
           </ul>
         </section>
 

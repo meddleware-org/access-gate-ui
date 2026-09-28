@@ -44,14 +44,15 @@ All `VITE_*` vars are baked into the static bundle at build time.
 | `VITE_GATE_FREEZE_REQUIRES_UNPAUSED` | `false` | Created gates can't be frozen while paused |
 | `VITE_GATE_LOCK_COMMISSION_ON_FREEZE` | `false` | Freezing a created gate locks in the platform commission |
 | `VITE_GATE_PAUSE_BLOCKS_DECRYPTION` | `false` | Pausing a created gate also blocks Seal decryption |
-| `VITE_GATE_MIN_PRICE_MIST` | `auto` | Minimum non-zero price: `auto` (smallest commission-bearing price, read live from `PlatformConfig`), or a MIST integer (`0` = none) |
-| `VITE_GATE_ALLOW_FREE` | `true` | Allow price-0 gates |
+| `VITE_GATE_PAUSE_BLOCKS_ACCESS` | `false` | Pausing a created gate also blocks pass use (`consume`, relay uploads) |
+| `VITE_GATE_MIN_PRICE_MIST` | `auto` | Minimum paid price: `auto` = the on-chain minimum (10 × the platform's minimum commission, read live from `PlatformConfig`); a MIST integer raises it further |
+| `VITE_GATE_ALLOW_FREE` | `true` | Allow price-0 gates (each pays the platform's one-off free-gate fee) |
 | `VITE_DOCS_URL` / `VITE_DEV_URL` | Meddleware docs | Header documentation links |
 
-The three `VITE_GATE_*` restriction flags form the gate's on-chain `GatePolicy`: it is recorded
-immutably on every gate the tool creates, and anyone can read it from the gate. Enabling any flag
-makes creation call `create_gate_with_policy`, which needs a policy-aware `access_gate` package. The
-policy is set by this tool, not enforced on gates created by calling the contract directly.
+The four `VITE_GATE_*` restriction flags form the gate's on-chain `GatePolicy`: it is recorded
+immutably on every gate the tool creates, and anyone can read it from the gate. The policy is set by
+this tool, not enforced on gates created by calling the contract directly. The platform's commission
+floor, minimum paid price and free-gate fee are enforced on-chain for every gate of the package.
 When `AccessGateView` is embedded (e.g. in the dashboard), the host app's build supplies these
 variables.
 

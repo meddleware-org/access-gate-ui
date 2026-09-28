@@ -1,10 +1,12 @@
 <script setup lang="ts">
-// AdminCap-gated free grant of the gate's NFT flavour to an address.
-import { ref } from 'vue'
+// AdminCap-gated grant of the gate's NFT flavour to an address. Free for the recipient; the admin
+// pays the platform the commission a purchase at the current price would carry.
+import { onMounted, ref } from 'vue'
 import { UiButton, UiNotice } from '@meddleware/ui'
-import { buildAirdropTx } from '@meddleware/nft-gate-client'
+import { gateCommissionMist } from '@meddleware/nft-gate-client'
 import type { OwnedGate } from '@meddleware/nft-gate-client'
-import { adminContext, executeTx } from '../gates.js'
+import { buildGateAirdropTx, executeTx, getPlatformConfig } from '../gates.js'
+import { mistToSui } from '../pricing.js'
 
 const props = defineProps<{
   /** The gate whose NFT flavour is airdropped. */
@@ -16,13 +18,23 @@ const recipient = ref('')
 const busy = ref(false)
 const error = ref<string | null>(null)
 const okDigest = ref<string | null>(null)
+/** Commission per airdrop (MIST); `null` until read. */
+const commissionMist = ref<bigint | null>(null)
+
+onMounted(async () => {
+  try {
+    commissionMist.value = gateCommissionMist(props.gate, await getPlatformConfig())
+  } catch {
+    // Computed again when airdropping.
+  }
+})
 
 async function airdrop(): Promise<void> {
   error.value = null
   okDigest.value = null
   busy.value = true
   try {
-    const digest = await executeTx(buildAirdropTx(adminContext(props.gate), recipient.value.trim()))
+    const digest = await executeTx(await buildGateAirdropTx(props.gate, recipient.value.trim()))
     okDigest.value = digest
     recipient.value = ''
     emit('changed')
@@ -45,12 +57,19 @@ async function airdrop(): Promise<void> {
         {{ busy ? 'Sending…' : 'Airdrop' }}
       </UiButton>
     </div>
+    <small v-if="commissionMist !== null && commissionMist > 0n" class="fee">
+      Each airdrop pays the platform commission of {{ mistToSui(commissionMist) }} SUI.
+    </small>
     <UiNotice v-if="error" type="error">{{ error }}</UiNotice>
     <UiNotice v-else-if="okDigest" type="ok">Airdropped. Tx: {{ okDigest }}</UiNotice>
   </div>
 </template>
 
 <style scoped>
+.fee {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
 .airdrop {
   display: flex;
   flex-direction: column;

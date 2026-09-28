@@ -7,7 +7,6 @@ import type { Transaction } from '@mysten/sui/transactions'
 import { UiButton, UiNotice } from '@meddleware/ui'
 import type { OwnedGate } from '@meddleware/nft-gate-client'
 import {
-  buildSetPriceTx,
   buildSetPaymentRecipientTx,
   buildSetPausedTx,
   buildSetDefaultUsesTx,
@@ -17,7 +16,8 @@ import {
   buildSetNftImageUrlTx,
   buildSetNftDescriptionTx,
 } from '@meddleware/nft-gate-client'
-import { adminContext, executeTx } from '../gates.js'
+import { adminContext, buildPriceChangeTx, executeTx } from '../gates.js'
+import { suiToMist } from '../pricing.js'
 
 const props = defineProps<{
   /** The gate being administered (supplies gateId + adminCapId + current values). */
@@ -26,7 +26,7 @@ const props = defineProps<{
 const emit = defineEmits<{ (e: 'changed'): void }>()
 
 // Local editable copies seeded from current on-chain state.
-const priceSui = ref((Number(props.gate.priceMist) / 1e9).toString())
+const priceSui = ref<string | number>((Number(props.gate.priceMist) / 1e9).toString())
 const paymentRecipient = ref(props.gate.paymentRecipient)
 const defaultUses = ref(props.gate.defaultUses.toString())
 const nftName = ref(props.gate.nftName)
@@ -36,18 +36,12 @@ const nftDescription = ref(props.gate.nftDescription)
 const busy = ref<string | null>(null)
 const error = ref<string | null>(null)
 
-function suiToMist(sui: string): bigint {
-  const n = Number(sui)
-  if (!Number.isFinite(n) || n < 0) throw new Error('Invalid price.')
-  return BigInt(Math.round(n * 1e9))
-}
-
 /** Build (lazily, so validation errors surface here) + execute one setter, keyed by `field`. */
-async function run(field: string, build: () => Transaction): Promise<void> {
+async function run(field: string, build: () => Transaction | Promise<Transaction>): Promise<void> {
   error.value = null
   busy.value = field
   try {
-    await executeTx(build())
+    await executeTx(await build())
     emit('changed')
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
@@ -65,8 +59,9 @@ const ctx = () => adminContext(props.gate)
       <label>
         <span>Price (SUI)</span>
         <input v-model="priceSui" type="number" min="0" step="0.000000001" />
+        <small v-if="!gate.freeFeePaid">Setting 0 makes the gate free and pays the one-off free-gate fee.</small>
       </label>
-      <UiButton variant="secondary" :disabled="busy !== null" @click="run('price', () => buildSetPriceTx(ctx(), suiToMist(priceSui)))">
+      <UiButton variant="secondary" :disabled="busy !== null" @click="run('price', () => buildPriceChangeTx(gate, suiToMist(priceSui)))">
         {{ busy === 'price' ? '…' : 'Update' }}
       </UiButton>
     </div>

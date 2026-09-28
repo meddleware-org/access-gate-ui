@@ -26,9 +26,11 @@ the main Meddleware dashboard alongside the other tools.
   wallet adapter.
 - **Operator-configurable env: network/RPC + gate-creation policy.** `VITE_NETWORK`,
   `VITE_RPC_TESTNET/MAINNET`, the `GatePolicy` flags (`VITE_GATE_FREEZE_REQUIRES_UNPAUSED`,
-  `VITE_GATE_LOCK_COMMISSION_ON_FREEZE`, `VITE_GATE_PAUSE_BLOCKS_DECRYPTION`; default false) and the
-  price floor (`VITE_GATE_MIN_PRICE_MIST` = `auto` | MIST, `VITE_GATE_ALLOW_FREE`). No commission or
-  package knobs. `auto` fails closed if `PlatformConfig` can't be read.
+  `VITE_GATE_LOCK_COMMISSION_ON_FREEZE`, `VITE_GATE_PAUSE_BLOCKS_DECRYPTION`,
+  `VITE_GATE_PAUSE_BLOCKS_ACCESS`; default false) and the price floor (`VITE_GATE_MIN_PRICE_MIST` =
+  `auto` | a higher MIST floor, `VITE_GATE_ALLOW_FREE`). No commission or package knobs — commission,
+  minimum paid price and the free-gate fee live on-chain in `PlatformConfig`, read live (fail closed
+  if unreadable).
 
 ## Layer map
 
@@ -38,7 +40,7 @@ the main Meddleware dashboard alongside the other tools.
 | `src/config.ts` | `SuiNetwork`, `NETWORK`, `RPC_URLS`, `GATE_POLICY`, `GATE_MIN_PRICE`, `GATE_ALLOW_FREE` (from env) |
 | `src/pricing.ts` | Pure price rules: exact `suiToMist`/`mistToSui`, `gatePriceError` |
 | `src/wallet.ts` | Shim over `@meddleware/wallet-adapter` binding this app's `RPC_URLS`; re-exports `useWallet` / `getSuiClient` / `buildExecutor` / `Executor` |
-| `src/gates.ts` | Binds the network + hardcoded package to nft-gate-client: `listMyGates`, `refreshGate`, `adminContext`, `executeTx`, `PLATFORM_CONFIG_ID`, `minimumGatePriceMist` |
+| `src/gates.ts` | Binds the network + hardcoded package to nft-gate-client: `listMyGates`, `refreshGate`, `adminContext`, `executeTx`, `PLATFORM_CONFIG_ID`, `getPlatformConfig`, `minimumGatePriceMist`, `buildPriceChangeTx`, `buildGateAirdropTx` |
 | `src/App.vue` | Standalone shell only: `AppHeader` (+ wallet connect, `ColorModeControl`) + `<AccessGateView>` + `AppFooter` |
 | `src/components/AccessGateView.vue` | Core tool UI (tabs, gate loading via an `account` watcher). Exported from `src/index.ts` for inline embedding. |
 | `src/index.ts` | Library entry — exports `AccessGateView` for the dashboard to render inline |

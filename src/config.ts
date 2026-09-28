@@ -36,22 +36,25 @@ export function envFlag(value: string | undefined, fallback = false): boolean {
  * - `VITE_GATE_LOCK_COMMISSION_ON_FREEZE` — freezing snapshots the platform commission.
  * - `VITE_GATE_PAUSE_BLOCKS_DECRYPTION` — Seal content gated by the gate is undecryptable while
  *   the gate is paused.
+ * - `VITE_GATE_PAUSE_BLOCKS_ACCESS` — while paused, passes cannot be used (`consume` aborts and
+ *   nft-gate gateways, e.g. the Walrus relay, deny holders). Independent of decryption.
  *
- * Enabling any flag makes gate creation call `create_gate_with_policy` (policy-aware packages only).
  */
 export const GATE_POLICY: GatePolicy = {
   freezeRequiresUnpaused: envFlag(env.VITE_GATE_FREEZE_REQUIRES_UNPAUSED),
   lockCommissionOnFreeze: envFlag(env.VITE_GATE_LOCK_COMMISSION_ON_FREEZE),
   pauseBlocksDecryption: envFlag(env.VITE_GATE_PAUSE_BLOCKS_DECRYPTION),
+  pauseBlocksAccess: envFlag(env.VITE_GATE_PAUSE_BLOCKS_ACCESS),
 }
 
-/** Minimum non-zero gate price: the live commission-derived floor, or a fixed MIST amount. */
+/** Minimum paid gate price: the on-chain minimum, or a higher fixed MIST floor. */
 export type MinPriceSetting = { kind: 'auto' } | { kind: 'fixed'; mist: bigint }
 
 /**
- * Parse `VITE_GATE_MIN_PRICE_MIST`: `auto` (default) ⇒ the smallest price whose platform
- * commission is ≥ 1 MIST (`⌈10000 / commission_bps⌉`, read live from `PlatformConfig`); a
- * non-negative integer ⇒ that fixed floor in MIST (`0` disables the minimum). Invalid ⇒ `auto`.
+ * Parse `VITE_GATE_MIN_PRICE_MIST`: `auto` (default) ⇒ the on-chain minimum paid price (10 × the
+ * platform's minimum commission, read live from `PlatformConfig`); a non-negative integer ⇒ a fixed
+ * floor in MIST, applied only where it is higher than the on-chain minimum (which the contract
+ * always enforces). Invalid ⇒ `auto`.
  */
 export function parseMinPrice(value: string | undefined): MinPriceSetting {
   const v = value?.trim().toLowerCase()

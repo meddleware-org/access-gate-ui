@@ -38,10 +38,11 @@ function priceLabel(mist: bigint): string {
         <span v-if="gate.soulbound" class="badge">Soulbound</span>
         <span v-if="gate.paused" class="badge badge--warn">Paused</span>
         <span v-if="gate.frozen" class="badge badge--warn">Frozen</span>
-        <span v-if="gate.lockedCommissionBps !== null && gate.lockedCommissionBps !== undefined" class="badge">
-          Commission locked at {{ gate.lockedCommissionBps }} bps
+        <span v-if="gate.lockedCommission" class="badge">
+          Commission locked at {{ gate.lockedCommission.bps }} bps
         </span>
         <span v-if="gate.policy?.pauseBlocksDecryption" class="badge">Pause blocks unlocks</span>
+        <span v-if="gate.policy?.pauseBlocksAccess" class="badge">Pause blocks access</span>
       </div>
     </div>
 

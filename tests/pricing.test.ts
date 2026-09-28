@@ -36,7 +36,7 @@ describe('gatePriceError', () => {
   })
 
   it('enforces the minimum on non-zero prices', () => {
-    expect(gatePriceError(499n, 500n, true)).toMatch(/minimum price is 0.0000005 SUI/)
+    expect(gatePriceError(499n, 500n, true)).toMatch(/minimum price for a paid gate is 0.0000005 SUI/)
     expect(gatePriceError(500n, 500n, true)).toBeNull()
     expect(gatePriceError(1n, 0n, true)).toBeNull()
   })

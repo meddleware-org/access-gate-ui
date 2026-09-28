@@ -32,7 +32,7 @@ export function mistToSui(mist: bigint): string {
 export function gatePriceError(priceMist: bigint, minMist: bigint, allowFree: boolean): string | null {
   if (priceMist === 0n) return allowFree ? null : 'Free gates are disabled on this deployment.'
   if (priceMist < minMist) {
-    return `The minimum price is ${mistToSui(minMist)} SUI (${minMist} MIST) — lower prices earn no platform commission.`
+    return `The minimum price for a paid gate is ${mistToSui(minMist)} SUI (${minMist} MIST).`
   }
   return null
 }

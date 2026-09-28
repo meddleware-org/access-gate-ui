@@ -6,7 +6,7 @@ import {
   accessGateNftType,
 } from '../src/constants'
 
-const VALID = '0x0bedd0b27d993d3292ca6a5315f7562de8bc0ff3752b445b4c53252c76f2d20d'
+const VALID = '0x1a81ca177db039585e575beeeee4759466e55910e936a6733e38dbb65025eea4'
 
 describe('validatePackageId', () => {
   it('accepts a canonical 0x + 64-lowercase-hex id', () => {
@@ -20,7 +20,7 @@ describe('validatePackageId', () => {
   })
 
   it('rejects a too-short id', () => {
-    expect(validatePackageId('0x0bedd0')).toBe(false)
+    expect(validatePackageId('0x1a81ca')).toBe(false)
   })
 
   it('rejects a too-long id', () => {

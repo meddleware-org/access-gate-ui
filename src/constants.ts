@@ -9,16 +9,16 @@ import type { SuiNetwork } from './config.js'
  * Keep these in sync with `@meddleware/walrus-relay`'s `constants.ts` (the same deployment).
  */
 export const ACCESS_GATE_PACKAGE_ID: Record<SuiNetwork, string> = {
-  testnet: '0x0bedd0b27d993d3292ca6a5315f7562de8bc0ff3752b445b4c53252c76f2d20d',
+  testnet: '0x1a81ca177db039585e575beeeee4759466e55910e936a6733e38dbb65025eea4',
   mainnet: '', // populated on mainnet deploy
 }
 
 /**
- * Meddleware's `PlatformConfig` shared object IDs per network. Governs the commission split on
- * every NFT purchase. Not required to create/manage gates, but kept for display + purchase-preview.
+ * Meddleware's `PlatformConfig` shared object IDs per network: the commission terms, the minimum
+ * paid price and the free-gate fee. Read by gate creation, set-price, airdrop and freeze.
  */
 export const ACCESS_GATE_PLATFORM_CONFIG_ID: Record<SuiNetwork, string> = {
-  testnet: '0x7c5aed0ce7f29a4dfb60657858df31c12410a67098b4bcdd1d8cb1e531be4884',
+  testnet: '0xe3b949cabe9a0574c03dfc924fb3f96e6f959f2bb86d053ed6229a241c3a23f7',
   mainnet: '', // populated on mainnet deploy
 }
 

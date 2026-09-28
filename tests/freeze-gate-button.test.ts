@@ -19,9 +19,9 @@ vi.mock('@meddleware/ui', () => ({
 const { executeTx, adminContext, buildMakeGateImmutableTx } = vi.hoisted(() => ({
   executeTx: vi.fn(async () => ({ digest: '0xok' })),
   adminContext: vi.fn((gate: unknown) => ({ gate })),
-  buildMakeGateImmutableTx: vi.fn((ctx: unknown, platform: string) => ({ kind: 'make-immutable', ctx, platform })),
+  buildMakeGateImmutableTx: vi.fn((ctx: unknown) => ({ kind: 'make-immutable', ctx })),
 }))
-vi.mock('../src/gates.js', () => ({ executeTx, adminContext, PLATFORM_CONFIG_ID: '0xplatform' }))
+vi.mock('../src/gates.js', () => ({ executeTx, adminContext }))
 vi.mock('@meddleware/nft-gate-client', () => ({ buildMakeGateImmutableTx }))
 
 import FreezeGateButton from '../src/components/FreezeGateButton.vue'
@@ -71,8 +71,8 @@ describe('FreezeGateButton (fail-closed confirmation)', () => {
     await findButton(w, 'Confirm freeze').trigger('click')
     await flushPromises()
     expect(adminContext).toHaveBeenCalledWith(gate)
-    expect(buildMakeGateImmutableTx).toHaveBeenCalledWith({ gate }, '0xplatform')
-    expect(executeTx).toHaveBeenCalledWith({ kind: 'make-immutable', ctx: { gate }, platform: '0xplatform' })
+    expect(buildMakeGateImmutableTx).toHaveBeenCalledWith({ gate })
+    expect(executeTx).toHaveBeenCalledWith({ kind: 'make-immutable', ctx: { gate } })
     expect(w.emitted('changed')).toBeTruthy()
   })
 

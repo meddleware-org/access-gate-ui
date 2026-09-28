@@ -2,8 +2,17 @@
 // @meddleware/nft-gate-client library. All PTB construction and on-chain reads live in the
 // library; this module only supplies the network's client and the hardcoded package id.
 import type { Transaction } from '@mysten/sui/transactions'
-import { fetchOwnedGates, fetchGate, fetchPlatformCommission, minimumProfitablePriceMist } from '@meddleware/nft-gate-client'
-import type { OwnedGate, GateAdminContext } from '@meddleware/nft-gate-client'
+import {
+  fetchOwnedGates,
+  fetchGate,
+  fetchPlatformConfig,
+  minimumPaidPriceMist,
+  gateCommissionMist,
+  buildAirdropTx,
+  buildMakeGateFreeTx,
+  buildSetPriceTx,
+} from '@meddleware/nft-gate-client'
+import type { OwnedGate, GateAdminContext, PlatformConfigInfo } from '@meddleware/nft-gate-client'
 import { NETWORK, GATE_MIN_PRICE } from './config.js'
 import { ACCESS_GATE_PACKAGE_ID, ACCESS_GATE_PLATFORM_CONFIG_ID } from './constants.js'
 import { getSuiClient, buildExecutor } from './wallet.js'
@@ -11,21 +20,28 @@ import { getSuiClient, buildExecutor } from './wallet.js'
 /** The access_gate package id for the active network (hardcoded — commission enforcement). */
 export const PACKAGE_ID = ACCESS_GATE_PACKAGE_ID[NETWORK]
 
-/** The package's shared `PlatformConfig` for the active network (commission source). */
+/** The package's shared `PlatformConfig` for the active network (commission terms and fees). */
 export const PLATFORM_CONFIG_ID = ACCESS_GATE_PLATFORM_CONFIG_ID[NETWORK]
 
 /**
- * The minimum non-zero gate price in MIST under the operator's `VITE_GATE_MIN_PRICE_MIST`: a fixed
- * floor, or (`auto`) the smallest price that yields ≥ 1 MIST of commission at the live rate.
+ * Read the live `PlatformConfig`.
  *
- * @throws {Error} if `auto` and the `PlatformConfig` cannot be read (fail closed — no gate is
- *   created against an unknown commission).
+ * @throws {Error} if it cannot be read (fail closed — nothing is built against unknown terms).
  */
-export async function minimumGatePriceMist(): Promise<bigint> {
-  if (GATE_MIN_PRICE.kind === 'fixed') return GATE_MIN_PRICE.mist
-  const platform = await fetchPlatformCommission(getSuiClient(), PLATFORM_CONFIG_ID)
-  if (!platform) throw new Error('Could not read the platform commission to determine the minimum price.')
-  return minimumProfitablePriceMist(platform.commissionBps)
+export async function getPlatformConfig(): Promise<PlatformConfigInfo> {
+  const platform = await fetchPlatformConfig(getSuiClient(), PLATFORM_CONFIG_ID)
+  if (!platform) throw new Error('Could not read the platform configuration (commission and fees).')
+  return platform
+}
+
+/**
+ * The minimum paid gate price in MIST: the on-chain minimum (10 × the platform's minimum
+ * commission), raised to `VITE_GATE_MIN_PRICE_MIST` if the operator set a higher fixed floor.
+ */
+export function minimumGatePriceMist(platform: PlatformConfigInfo): bigint {
+  const onChain = minimumPaidPriceMist(platform.minCommissionMist)
+  if (GATE_MIN_PRICE.kind === 'fixed' && GATE_MIN_PRICE.mist > onChain) return GATE_MIN_PRICE.mist
+  return onChain
 }
 
 /** List every gate the given operator address administers (via their owned AdminCaps). */
@@ -39,9 +55,28 @@ export async function refreshGate(gate: OwnedGate): Promise<OwnedGate | null> {
   return fresh ? { ...fresh, adminCapId: gate.adminCapId } : null
 }
 
-/** Build the AdminCap-gated context (`{ packageId, gateId, adminCapId }`) for a gate's PTBs. */
+/** Build the AdminCap-gated context for a gate's PTBs. */
 export function adminContext(gate: OwnedGate): GateAdminContext {
-  return { packageId: PACKAGE_ID, gateId: gate.gateId, adminCapId: gate.adminCapId }
+  return { packageId: PACKAGE_ID, gateId: gate.gateId, adminCapId: gate.adminCapId, platformConfigId: PLATFORM_CONFIG_ID }
+}
+
+/**
+ * Build the PTB that changes a gate's price. Going free on a gate that has never paid the free-gate
+ * fee calls `make_gate_free` (paying the fee); otherwise `set_price`, which the contract rejects
+ * below the minimum paid price.
+ */
+export async function buildPriceChangeTx(gate: OwnedGate, priceMist: bigint): Promise<Transaction> {
+  if (priceMist === 0n && !gate.freeFeePaid) {
+    const platform = await getPlatformConfig()
+    return buildMakeGateFreeTx(adminContext(gate), platform.freeGateFeeMist)
+  }
+  return buildSetPriceTx(adminContext(gate), priceMist)
+}
+
+/** Build an airdrop PTB that pays the commission due at the gate's current price. */
+export async function buildGateAirdropTx(gate: OwnedGate, recipient: string): Promise<Transaction> {
+  const platform = await getPlatformConfig()
+  return buildAirdropTx(adminContext(gate), recipient, gateCommissionMist(gate, platform))
 }
 
 /**

@@ -6,7 +6,7 @@ import { computed, ref } from 'vue'
 import { UiButton, UiNotice } from '@meddleware/ui'
 import { buildMakeGateImmutableTx } from '@meddleware/nft-gate-client'
 import type { OwnedGate } from '@meddleware/nft-gate-client'
-import { adminContext, executeTx, PLATFORM_CONFIG_ID } from '../gates.js'
+import { adminContext, executeTx } from '../gates.js'
 
 const props = defineProps<{
   /** The gate to freeze. */
@@ -27,7 +27,7 @@ async function freeze(): Promise<void> {
   error.value = null
   busy.value = true
   try {
-    await executeTx(buildMakeGateImmutableTx(adminContext(props.gate), PLATFORM_CONFIG_ID))
+    await executeTx(buildMakeGateImmutableTx(adminContext(props.gate)))
     emit('changed')
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
@@ -53,7 +53,7 @@ async function freeze(): Promise<void> {
         Freezing is <strong>permanent</strong>: it destroys the AdminCap and ends all settings and
         airdrops for this gate. Purchases and consumption continue.
         <template v-if="gate.policy?.lockCommissionOnFreeze">
-          The current platform commission is locked in for all future purchases.
+          The current platform commission terms are locked in for all future purchases.
         </template>
         Type <code>FREEZE</code> to confirm.
       </UiNotice>
