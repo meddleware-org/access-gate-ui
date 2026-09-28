@@ -39,8 +39,21 @@ All `VITE_*` vars are baked into the static bundle at build time.
 | Variable | Default | Description |
 | --- | --- | --- |
 | `VITE_NETWORK` | `testnet` | `testnet` or `mainnet` |
-| `VITE_RPC_TESTNET` | `https://sui-testnet-rpc.publicnode.com` | Sui JSON-RPC for testnet |
-| `VITE_RPC_MAINNET` | `https://fullnode.mainnet.sui.io:443` | Sui JSON-RPC for mainnet |
+| `VITE_RPC_TESTNET` | `https://fullnode.testnet.sui.io:443` | Sui gRPC-web endpoint for testnet |
+| `VITE_RPC_MAINNET` | `https://fullnode.mainnet.sui.io:443` | Sui gRPC-web endpoint for mainnet |
+| `VITE_GATE_FREEZE_REQUIRES_UNPAUSED` | `false` | Created gates can't be frozen while paused |
+| `VITE_GATE_LOCK_COMMISSION_ON_FREEZE` | `false` | Freezing a created gate locks in the platform commission |
+| `VITE_GATE_PAUSE_BLOCKS_DECRYPTION` | `false` | Pausing a created gate also blocks Seal decryption |
+| `VITE_GATE_MIN_PRICE_MIST` | `auto` | Minimum non-zero price: `auto` (smallest commission-bearing price, read live from `PlatformConfig`), or a MIST integer (`0` = none) |
+| `VITE_GATE_ALLOW_FREE` | `true` | Allow price-0 gates |
+| `VITE_DOCS_URL` / `VITE_DEV_URL` | Meddleware docs | Header documentation links |
+
+The three `VITE_GATE_*` restriction flags form the gate's on-chain `GatePolicy`: it is recorded
+immutably on every gate the tool creates, and anyone can read it from the gate. Enabling any flag
+makes creation call `create_gate_with_policy`, which needs a policy-aware `access_gate` package. The
+policy is set by this tool, not enforced on gates created by calling the contract directly.
+When `AccessGateView` is embedded (e.g. in the dashboard), the host app's build supplies these
+variables.
 
 The `access_gate` package ID and `PlatformConfig` object ID are **hardcoded** in
 `src/constants.ts` (commission enforcement) and are not configurable.

@@ -19,9 +19,9 @@ vi.mock('@meddleware/ui', () => ({
 const { executeTx, adminContext, buildMakeGateImmutableTx } = vi.hoisted(() => ({
   executeTx: vi.fn(async () => ({ digest: '0xok' })),
   adminContext: vi.fn((gate: unknown) => ({ gate })),
-  buildMakeGateImmutableTx: vi.fn((ctx: unknown) => ({ kind: 'make-immutable', ctx })),
+  buildMakeGateImmutableTx: vi.fn((ctx: unknown, platform: string) => ({ kind: 'make-immutable', ctx, platform })),
 }))
-vi.mock('../src/gates.js', () => ({ executeTx, adminContext }))
+vi.mock('../src/gates.js', () => ({ executeTx, adminContext, PLATFORM_CONFIG_ID: '0xplatform' }))
 vi.mock('@meddleware/nft-gate-client', () => ({ buildMakeGateImmutableTx }))
 
 import FreezeGateButton from '../src/components/FreezeGateButton.vue'
@@ -71,8 +71,8 @@ describe('FreezeGateButton (fail-closed confirmation)', () => {
     await findButton(w, 'Confirm freeze').trigger('click')
     await flushPromises()
     expect(adminContext).toHaveBeenCalledWith(gate)
-    expect(buildMakeGateImmutableTx).toHaveBeenCalledWith({ gate })
-    expect(executeTx).toHaveBeenCalledWith({ kind: 'make-immutable', ctx: { gate } })
+    expect(buildMakeGateImmutableTx).toHaveBeenCalledWith({ gate }, '0xplatform')
+    expect(executeTx).toHaveBeenCalledWith({ kind: 'make-immutable', ctx: { gate }, platform: '0xplatform' })
     expect(w.emitted('changed')).toBeTruthy()
   })
 
@@ -85,5 +85,18 @@ describe('FreezeGateButton (fail-closed confirmation)', () => {
     await flushPromises()
     expect(executeTx).not.toHaveBeenCalled()
     expect(w.emitted('changed')).toBeFalsy()
+  })
+
+  it('explains instead of offering Freeze when the policy forbids freezing a paused gate', () => {
+    const paused = { gateId: '0xgate', paused: true, policy: { freezeRequiresUnpaused: true } } as never
+    const w = mount(FreezeGateButton, { props: { gate: paused } })
+    expect(w.text()).toContain("can't be frozen while paused")
+    expect(w.findAll('button').some((b) => b.text().includes('Freeze gate'))).toBe(false)
+  })
+
+  it('still offers Freeze for a paused gate without that restriction', () => {
+    const paused = { gateId: '0xgate', paused: true, policy: { freezeRequiresUnpaused: false } } as never
+    const w = mount(FreezeGateButton, { props: { gate: paused } })
+    expect(findButton(w, 'Freeze gate').exists()).toBe(true)
   })
 })

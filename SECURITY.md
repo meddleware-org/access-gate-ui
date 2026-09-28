@@ -20,8 +20,10 @@ treated as high severity:
    `ACCESS_GATE_PLATFORM_CONFIG_ID` are compile-time per-network constants (deliberately not env
    vars) so purchases route commission on-chain; an empty/invalid constant for the active network
    must abort a purchase/gate action rather than build against an empty package id.
-2. **No secret is a `VITE_*` value.** Only `VITE_NETWORK` + `VITE_RPC_*` are read; both are
-   non-secret.
+2. **No secret is a `VITE_*` value.** `VITE_NETWORK`, `VITE_RPC_*`, `VITE_DOCS_URL`/`VITE_DEV_URL`
+   and the `VITE_GATE_*` creation policy are all non-secret. The gate policy is a property of this
+   tool: it shapes the gates the tool creates but binds nobody calling the contract directly —
+   buyers verify a gate's `GatePolicy` on-chain.
 3. **Freeze is irreversible and guarded.** `make_gate_immutable` is behind a typed confirmation and
    cannot be triggered accidentally.
 4. **No dynamic HTML sinks.** Gate `name`/`description` and any on-chain string render as text.

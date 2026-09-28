@@ -1,10 +1,13 @@
 <script setup lang="ts">
-// Create a new access gate. Builds `create_gate` via @meddleware/nft-gate-client under the
-// hardcoded Meddleware package (commission enforced), then emits the tx digest on success.
-import { ref } from 'vue'
+// Create a new access gate. Builds `create_gate` (or `create_gate_with_policy` when the operator
+// configured restrictions) via @meddleware/nft-gate-client under the hardcoded Meddleware package
+// (commission enforced), enforcing the operator's minimum price, then emits the tx digest.
+import { onMounted, ref } from 'vue'
 import { UiCard, UiButton, UiNotice, UiStepper, type StepperStep } from '@meddleware/ui'
-import { buildCreateGateTx } from '@meddleware/nft-gate-client'
-import { PACKAGE_ID, executeTx } from '../gates.js'
+import { buildCreateGateTx, isRestrictivePolicy } from '@meddleware/nft-gate-client'
+import { PACKAGE_ID, executeTx, minimumGatePriceMist } from '../gates.js'
+import { GATE_ALLOW_FREE, GATE_POLICY } from '../config.js'
+import { gatePriceError, mistToSui, suiToMist } from '../pricing.js'
 
 const props = defineProps<{
   /** Connected operator address; prefilled as the default payment recipient. */
@@ -12,7 +15,7 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ (e: 'created', digest: string): void }>()
 
-const priceSui = ref('0')
+const priceSui = ref<string | number>('0')
 const defaultUses = ref('0')
 const soulbound = ref(false)
 const autoBurnAtZero = ref(false)
@@ -32,20 +35,31 @@ const STEPS: StepperStep[] = [
 ]
 const step = ref(0)
 
-/** Convert a decimal SUI string to a MIST bigint (1 SUI = 1e9 MIST). */
-function suiToMist(sui: string): bigint {
-  const n = Number(sui)
-  if (!Number.isFinite(n) || n < 0) throw new Error('Invalid price.')
-  return BigInt(Math.round(n * 1e9))
-}
+/** Operator minimum non-zero price (MIST); `null` until resolved (or if it could not be read). */
+const minPriceMist = ref<bigint | null>(null)
+const restricted = isRestrictivePolicy(GATE_POLICY)
+
+onMounted(async () => {
+  try {
+    minPriceMist.value = await minimumGatePriceMist()
+  } catch {
+    // Resolved again (and surfaced) at submit time.
+  }
+})
 
 async function submit(): Promise<void> {
   error.value = null
   okDigest.value = null
   submitting.value = true
   try {
+    const priceMist = suiToMist(priceSui.value)
+    // Re-resolve at submit so the floor reflects the live commission (fails closed if unreadable).
+    const minMist = await minimumGatePriceMist()
+    minPriceMist.value = minMist
+    const priceError = gatePriceError(priceMist, minMist, GATE_ALLOW_FREE)
+    if (priceError) throw new Error(priceError)
     const tx = buildCreateGateTx(PACKAGE_ID, {
-      priceMist: suiToMist(priceSui.value),
+      priceMist,
       paymentRecipient: paymentRecipient.value.trim(),
       defaultUses: BigInt(defaultUses.value || '0'),
       soulbound: soulbound.value,
@@ -53,6 +67,7 @@ async function submit(): Promise<void> {
       nftName: nftName.value,
       nftImageUrl: nftImageUrl.value,
       nftDescription: nftDescription.value,
+      policy: GATE_POLICY,
     })
     const digest = await executeTx(tx)
     okDigest.value = digest
@@ -75,7 +90,12 @@ async function submit(): Promise<void> {
         <label class="field">
           <span>Price (SUI)</span>
           <input v-model="priceSui" type="number" min="0" step="0.000000001" inputmode="decimal" />
-          <small>0 = free gate.</small>
+          <small>
+            <template v-if="GATE_ALLOW_FREE">0 = free gate. </template>
+            <template v-if="minPriceMist !== null && minPriceMist > 0n">
+              Minimum {{ mistToSui(minPriceMist) }} SUI.
+            </template>
+          </small>
         </label>
 
         <label class="field">
@@ -130,6 +150,15 @@ async function submit(): Promise<void> {
           <span>Auto-burn NFTs at zero credits</span>
         </label>
 
+        <section v-if="restricted" class="policy" aria-labelledby="gate-policy-heading">
+          <h4 id="gate-policy-heading">Permanent rules on this deployment</h4>
+          <ul>
+            <li v-if="GATE_POLICY.freezeRequiresUnpaused">The gate can't be frozen while paused.</li>
+            <li v-if="GATE_POLICY.lockCommissionOnFreeze">Freezing locks in the current platform commission.</li>
+            <li v-if="GATE_POLICY.pauseBlocksDecryption">Pausing the gate also stops Seal-protected content from being unlocked.</li>
+          </ul>
+        </section>
+
         <div class="nav-row">
           <UiButton type="button" variant="secondary" @click="step--">Back</UiButton>
           <UiButton type="submit" :disabled="submitting">
@@ -171,6 +200,16 @@ async function submit(): Promise<void> {
 .field small {
   color: var(--muted);
   font-size: 0.8rem;
+}
+.policy h4 {
+  margin: 0 0 0.3rem;
+  font-size: 0.9rem;
+}
+.policy ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--muted);
+  font-size: 0.85rem;
 }
 .check {
   display: flex;
