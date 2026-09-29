@@ -72,7 +72,9 @@ function onCreated(): void {
     The access_gate contract is not deployed on {{ NETWORK }}. Switch to a supported network.
   </UiNotice>
 
-  <WalletGuard v-else message="Connect a Sui wallet to create and manage your access gates.">
+  <!-- The tab list and its panel always render (every tab controls a live panel); the wallet
+       prompt replaces only the panel's content until a wallet is connected. -->
+  <template v-else>
     <AppTabNav
       :tabs="TABS"
       :model-value="activeTab"
@@ -83,13 +85,15 @@ function onCreated(): void {
     />
 
     <UiTabPanel id-prefix="access-gate" :tab="activeTab">
-      <template v-if="activeTab === 'gates'">
-        <UiNotice v-if="loadError" type="error">{{ loadError }}</UiNotice>
-        <GateList :gates="gates" :loading="loadingGates" @changed="reloadGates" />
-      </template>
-      <CreateGateForm v-else-if="account" :address="account.address" @created="onCreated" />
+      <WalletGuard message="Connect a Sui wallet to create and manage your access gates.">
+        <template v-if="activeTab === 'gates'">
+          <UiNotice v-if="loadError" type="error">{{ loadError }}</UiNotice>
+          <GateList :gates="gates" :loading="loadingGates" @changed="reloadGates" />
+        </template>
+        <CreateGateForm v-else-if="account" :address="account.address" @created="onCreated" />
+      </WalletGuard>
     </UiTabPanel>
-  </WalletGuard>
+  </template>
 </template>
 
 <style scoped>

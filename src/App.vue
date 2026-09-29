@@ -24,7 +24,7 @@ async function onConnect(): Promise<void> {
   <div class="app">
     <AppHeader variant="dark">
       <template #brand>
-        <span>Access Gate</span>
+        <h1 class="brand-title">Access Gate</h1>
       </template>
       <template #actions>
         <template v-if="account">
@@ -42,9 +42,9 @@ async function onConnect(): Promise<void> {
       </template>
     </AppHeader>
 
-    <div class="app__content">
+    <main class="app__content">
       <AccessGateView />
-    </div>
+    </main>
 
     <AppFooter :docs-url="DOCS_URL" :dev-url="DEV_URL" />
   </div>
@@ -66,5 +66,11 @@ async function onConnect(): Promise<void> {
   margin: 0 auto;
   box-sizing: border-box;
   padding: 1.5rem 1.25rem 4rem;
+}
+
+/* The app title is the page's h1; keep the header's own type styles. */
+.brand-title {
+  font: inherit;
+  margin: 0;
 }
 </style>
