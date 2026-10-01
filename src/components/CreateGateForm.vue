@@ -1,11 +1,12 @@
 <script setup lang="ts">
-// Create a new access gate via @meddleware/nft-gate-client under the hardcoded Meddleware package:
+// Create a new access gate via @meddleware/access-gate-client under Meddleware's recorded deployment:
 // `create_gate` for a paid gate (at or above the minimum paid price) or `create_free_gate` (paying the
 // platform's free-gate fee), with the operator's immutable GatePolicy. Emits the tx digest.
 import { onMounted, ref } from 'vue'
 import { UiCard, UiButton, UiNotice, UiStepper, type StepperStep } from '@meddleware/ui'
-import { buildCreateGateTx, isRestrictivePolicy } from '@meddleware/nft-gate-client'
-import { PACKAGE_ID, PLATFORM_CONFIG_ID, executeTx, getPlatformConfig, minimumGatePriceMist } from '../gates.js'
+import { isRestrictivePolicy } from '@meddleware/access-gate-client'
+import { buildNewGateTx, errorMessage, executeTx, getPlatformConfig, minimumGatePriceMist } from '../gates.js'
+import { imageUrlError } from '../validation.js'
 import { GATE_ALLOW_FREE, GATE_POLICY } from '../config.js'
 import { gatePriceError, mistToSui, suiToMist } from '../pricing.js'
 
@@ -63,14 +64,16 @@ async function submit(): Promise<void> {
     freeGateFeeMist.value = platform.freeGateFeeMist
     const priceError = gatePriceError(priceMist, minMist, GATE_ALLOW_FREE)
     if (priceError) throw new Error(priceError)
-    const tx = buildCreateGateTx(PACKAGE_ID, PLATFORM_CONFIG_ID, {
+    const imageError = imageUrlError(nftImageUrl.value)
+    if (imageError) throw new Error(imageError)
+    const tx = buildNewGateTx({
       priceMist,
       paymentRecipient: paymentRecipient.value.trim(),
       defaultUses: BigInt(defaultUses.value || '0'),
       soulbound: soulbound.value,
       autoBurnAtZero: autoBurnAtZero.value,
       nftName: nftName.value,
-      nftImageUrl: nftImageUrl.value,
+      nftImageUrl: nftImageUrl.value.trim(),
       nftDescription: nftDescription.value,
       policy: GATE_POLICY,
       freeGateFeeMist: platform.freeGateFeeMist,
@@ -79,7 +82,7 @@ async function submit(): Promise<void> {
     okDigest.value = digest
     emit('created', digest)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = errorMessage(e)
   } finally {
     submitting.value = false
   }

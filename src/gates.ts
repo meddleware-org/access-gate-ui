@@ -1,27 +1,22 @@
-// Thin bindings between the app (active network + hardcoded package) and the reusable
-// @meddleware/nft-gate-client library. All PTB construction and on-chain reads live in the
-// library; this module only supplies the network's client and the hardcoded package id.
+// Thin bindings between the app (active network + its access_gate deployment) and
+// @meddleware/access-gate-client. All transaction construction and on-chain reads live in the
+// library; this module supplies the network's client and the recorded deployment ids.
 import type { Transaction } from '@mysten/sui/transactions'
 import {
-  fetchOwnedGates,
-  fetchGate,
-  fetchPlatformConfig,
-  minimumPaidPriceMist,
-  gateCommissionMist,
+  abortMessage,
   buildAirdropTx,
+  buildCreateGateTx,
   buildMakeGateFreeTx,
   buildSetPriceTx,
-} from '@meddleware/nft-gate-client'
-import type { OwnedGate, GateAdminContext, PlatformConfigInfo } from '@meddleware/nft-gate-client'
-import { NETWORK, GATE_MIN_PRICE } from './config.js'
-import { ACCESS_GATE_PACKAGE_ID, ACCESS_GATE_PLATFORM_CONFIG_ID } from './constants.js'
+  fetchGate,
+  fetchOwnedGates,
+  fetchPlatformConfig,
+  gateCommissionMist,
+  minimumPaidPriceMist,
+} from '@meddleware/access-gate-client'
+import type { GateAdminContext, OwnedGate, PlatformConfigInfo } from '@meddleware/access-gate-client'
+import { GATE_MIN_PRICE, requireDeployment } from './config.js'
 import { getSuiClient, buildExecutor } from './wallet.js'
-
-/** The access_gate package id for the active network (hardcoded — commission enforcement). */
-export const PACKAGE_ID = ACCESS_GATE_PACKAGE_ID[NETWORK]
-
-/** The package's shared `PlatformConfig` for the active network (commission terms and fees). */
-export const PLATFORM_CONFIG_ID = ACCESS_GATE_PLATFORM_CONFIG_ID[NETWORK]
 
 /**
  * Read the live `PlatformConfig`.
@@ -29,9 +24,8 @@ export const PLATFORM_CONFIG_ID = ACCESS_GATE_PLATFORM_CONFIG_ID[NETWORK]
  * @throws {Error} if it cannot be read (fail closed — nothing is built against unknown terms).
  */
 export async function getPlatformConfig(): Promise<PlatformConfigInfo> {
-  const platform = await fetchPlatformConfig(getSuiClient(), PLATFORM_CONFIG_ID)
-  if (!platform) throw new Error('Could not read the platform configuration (commission and fees).')
-  return platform
+  const d = requireDeployment()
+  return fetchPlatformConfig(getSuiClient(), d.platformConfigId, d.originalId)
 }
 
 /**
@@ -46,18 +40,25 @@ export function minimumGatePriceMist(platform: PlatformConfigInfo): bigint {
 
 /** List every gate the given operator address administers (via their owned AdminCaps). */
 export async function listMyGates(owner: string): Promise<OwnedGate[]> {
-  return fetchOwnedGates(getSuiClient(), owner, PACKAGE_ID)
+  return fetchOwnedGates(getSuiClient(), owner, requireDeployment().originalId)
 }
 
 /** Re-read one gate's on-chain state (after a management tx), merging back its known adminCapId. */
 export async function refreshGate(gate: OwnedGate): Promise<OwnedGate | null> {
-  const fresh = await fetchGate(getSuiClient(), gate.gateId)
+  const fresh = await fetchGate(getSuiClient(), gate.gateId, requireDeployment().originalId)
   return fresh ? { ...fresh, adminCapId: gate.adminCapId } : null
 }
 
-/** Build the AdminCap-gated context for a gate's PTBs. */
+/** Build the AdminCap-gated context for a gate's transactions (call target: the latest package). */
 export function adminContext(gate: OwnedGate): GateAdminContext {
-  return { packageId: PACKAGE_ID, gateId: gate.gateId, adminCapId: gate.adminCapId, platformConfigId: PLATFORM_CONFIG_ID }
+  const d = requireDeployment()
+  return { packageId: d.publishedAt, gateId: gate.gateId, adminCapId: gate.adminCapId, platformConfigId: d.platformConfigId }
+}
+
+/** Build the create-gate transaction under the active network's deployment. */
+export function buildNewGateTx(opts: Parameters<typeof buildCreateGateTx>[2]): Transaction {
+  const d = requireDeployment()
+  return buildCreateGateTx(d.publishedAt, d.platformConfigId, opts)
 }
 
 /**
@@ -80,15 +81,40 @@ export async function buildGateAirdropTx(gate: OwnedGate, recipient: string): Pr
 }
 
 /**
- * Sign + execute a built PTB with the connected wallet on the active network and wait for
- * finality. Returns the transaction digest.
+ * The message to show for a failed action: the access_gate abort's meaning when the error carries
+ * one, otherwise the error's own message.
+ */
+export function errorMessage(e: unknown): string {
+  let originalId: string | undefined
+  try {
+    originalId = requireDeployment().originalId
+  } catch {
+    originalId = undefined
+  }
+  return abortMessage(e, originalId) ?? (e instanceof Error ? e.message : String(e))
+}
+
+/**
+ * Sign + execute a built PTB with the connected wallet on the active network and wait until it is
+ * indexed, so a following read sees its effects. Returns the transaction digest.
  *
- * @throws {Error} if no wallet is connected or the wallet rejects/execution fails.
+ * @throws {Error} if no wallet is connected, the wallet rejects, the transaction fails on-chain
+ *   (the error carries the abort, for {@link errorMessage}), or it cannot be confirmed.
  */
 export async function executeTx(tx: Transaction): Promise<string> {
   const executor = await buildExecutor()
-  const { digest } = await executor.signAndExecute(tx)
-  await executor.waitForTransaction(digest).catch(() => {})
+  const { digest, success, result } = await executor.signAndExecute(tx, { include: {} })
+  if (!success) {
+    const status = result.FailedTransaction?.status
+    throw Object.assign(new Error(`Transaction ${digest} failed on-chain.`), { error: status?.error ?? null })
+  }
+  try {
+    await executor.waitForTransaction(digest)
+  } catch (e) {
+    throw new Error(
+      `Transaction ${digest} was submitted but could not be confirmed (${e instanceof Error ? e.message : String(e)}). ` +
+        'Refresh before retrying.',
+    )
+  }
   return digest
 }
-

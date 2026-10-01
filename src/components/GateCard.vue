@@ -3,7 +3,7 @@
 // (settings, airdrop, freeze). A frozen gate shows a locked notice instead of controls.
 import { ref } from 'vue'
 import { UiCard, UiButton, UiNotice } from '@meddleware/ui'
-import type { OwnedGate } from '@meddleware/nft-gate-client'
+import type { OwnedGate } from '@meddleware/access-gate-client'
 import GateSettingsPanel from './GateSettingsPanel.vue'
 import AirdropForm from './AirdropForm.vue'
 import FreezeGateButton from './FreezeGateButton.vue'

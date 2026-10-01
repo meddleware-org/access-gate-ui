@@ -1,7 +1,7 @@
 # ── build stage ───────────────────────────────────────────────────────────────
 # Standalone build — the Docker context is this repo root. All @meddleware/*
-# dependencies (including @meddleware/nft-gate-client) resolve from the npm registry,
-# so nft-gate-client must be published before this image is built.
+# dependencies (including @meddleware/access-gate-client) resolve from the npm registry,
+# so access-gate-client must be published before this image is built.
 #
 #   docker build \
 #     --build-arg VITE_NETWORK=testnet \
@@ -9,15 +9,13 @@
 #
 # Build args (VITE_* are baked into the static bundle at build time):
 #   VITE_NETWORK          — "testnet" | "mainnet"  (default: testnet)
-#   VITE_RPC_TESTNET      — override the default Sui testnet RPC URL (optional)
-#   VITE_RPC_MAINNET      — override the default Sui mainnet RPC URL (optional)
 #   VITE_GATE_FREEZE_REQUIRES_UNPAUSED / VITE_GATE_LOCK_COMMISSION_ON_FREEZE /
 #   VITE_GATE_PAUSE_BLOCKS_DECRYPTION / VITE_GATE_PAUSE_BLOCKS_ACCESS
 #                         — immutable GatePolicy restrictions on created gates (default: false)
 #   VITE_GATE_MIN_PRICE_MIST — "auto" (the on-chain minimum paid price) or a higher MIST floor
 #                         (default: auto)
 #   VITE_GATE_ALLOW_FREE  — allow price-0 gates, which pay the free-gate fee  (default: true)
-# The access_gate packageId and PlatformConfig id are hardcoded in src/constants.ts
+# The access_gate packageId and PlatformConfig id come from @meddleware/access-gate-client/deployments
 # (commission enforcement) — they are NOT build args.
 # Content-Security-Policy served by static-server (verified 2026-09-30: production build loaded in
 # Chromium under this policy with zero violations). script-src stays 'self'; connect-src allows
@@ -37,8 +35,6 @@ RUN npm ci
 COPY . .
 
 ARG VITE_NETWORK=testnet
-ARG VITE_RPC_TESTNET
-ARG VITE_RPC_MAINNET
 ARG VITE_GATE_FREEZE_REQUIRES_UNPAUSED=false
 ARG VITE_GATE_LOCK_COMMISSION_ON_FREEZE=false
 ARG VITE_GATE_PAUSE_BLOCKS_DECRYPTION=false
@@ -47,8 +43,6 @@ ARG VITE_GATE_MIN_PRICE_MIST=auto
 ARG VITE_GATE_ALLOW_FREE=true
 
 ENV VITE_NETWORK=${VITE_NETWORK} \
-    VITE_RPC_TESTNET=${VITE_RPC_TESTNET} \
-    VITE_RPC_MAINNET=${VITE_RPC_MAINNET} \
     VITE_GATE_FREEZE_REQUIRES_UNPAUSED=${VITE_GATE_FREEZE_REQUIRES_UNPAUSED} \
     VITE_GATE_LOCK_COMMISSION_ON_FREEZE=${VITE_GATE_LOCK_COMMISSION_ON_FREEZE} \
     VITE_GATE_PAUSE_BLOCKS_DECRYPTION=${VITE_GATE_PAUSE_BLOCKS_DECRYPTION} \

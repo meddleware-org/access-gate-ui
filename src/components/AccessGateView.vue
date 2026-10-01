@@ -9,9 +9,9 @@
 import { ref, watch } from 'vue'
 import { AppTabNav, UiNotice, UiTabPanel, UiToolIntro, type AppTab } from '@meddleware/ui'
 import { WalletGuard } from '@meddleware/wallet-adapter'
-import type { OwnedGate } from '@meddleware/nft-gate-client'
-import { NETWORK } from '../config.js'
-import { PACKAGE_ID, listMyGates } from '../gates.js'
+import type { OwnedGate } from '@meddleware/access-gate-client'
+import { deployed, network } from '../config.js'
+import { errorMessage, listMyGates } from '../gates.js'
 import { useWallet } from '../wallet.js'
 import CreateGateForm from './CreateGateForm.vue'
 import GateList from './GateList.vue'
@@ -33,28 +33,32 @@ const gates = ref<OwnedGate[]>([])
 const loadingGates = ref(false)
 const loadError = ref<string | null>(null)
 
-const deployed = PACKAGE_ID !== ''
+let loadGeneration = 0
 
 async function reloadGates(): Promise<void> {
-  if (!account.value || !deployed) return
+  const mine = ++loadGeneration
+  if (!account.value || !deployed.value) return
   loadingGates.value = true
   loadError.value = null
   try {
-    gates.value = await listMyGates(account.value.address)
+    const list = await listMyGates(account.value.address)
+    if (mine === loadGeneration) gates.value = list
   } catch (e) {
-    loadError.value = e instanceof Error ? e.message : String(e)
+    if (mine === loadGeneration) loadError.value = errorMessage(e)
   } finally {
-    loadingGates.value = false
+    if (mine === loadGeneration) loadingGates.value = false
   }
 }
 
-// Load (and clear) gates as the shared wallet connects/disconnects — independent of where the
-// connect action originates.
+// Load (and clear) gates as the shared wallet connects/disconnects or the network changes —
+// independent of where the action originates. A slower, older load never overwrites a newer one.
 watch(
-  () => account.value?.address ?? null,
-  (addr) => {
+  [() => account.value?.address ?? null, network],
+  ([addr]) => {
+    gates.value = []
+    loadError.value = null
     if (addr) void reloadGates()
-    else gates.value = []
+    else loadGeneration++
   },
   { immediate: true },
 )
@@ -66,10 +70,10 @@ function onCreated(): void {
 </script>
 
 <template>
-  <UiToolIntro>Create and manage on-chain access gates on Sui ({{ NETWORK }}).</UiToolIntro>
+  <UiToolIntro>Create and manage on-chain access gates on Sui ({{ network }}).</UiToolIntro>
 
   <UiNotice v-if="!deployed" type="error">
-    The access_gate contract is not deployed on {{ NETWORK }}. Switch to a supported network.
+    The access_gate contract is not deployed on {{ network }}. Switch to a supported network.
   </UiNotice>
 
   <!-- The tab list and its panel always render (every tab controls a live panel); the wallet

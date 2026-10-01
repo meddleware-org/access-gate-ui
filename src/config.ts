@@ -1,25 +1,42 @@
-// Build-time configuration (Vite inlines VITE_*). Operators configure the network, RPC URLs and
-// the gate-creation policy (restrictions + minimum price); the access_gate packageId +
-// PlatformConfig id are hardcoded in constants.ts (commission enforcement).
-import type { GatePolicy } from '@meddleware/nft-gate-client'
-
-/** Sui network. The access_gate contract is deployed per-network. */
-export type SuiNetwork = 'testnet' | 'mainnet'
+// Configuration. The network is wallet-adapter's shared runtime selector — the one source for the
+// client, the access_gate ids and explorer links (the standalone build selects VITE_NETWORK in
+// main.ts). The access_gate ids come from @meddleware/access-gate-client/deployments and are not
+// configurable (commission enforcement). Operators configure only the gate-creation policy
+// (restrictions + minimum price) through VITE_*.
+import { computed } from 'vue'
+import type { GatePolicy } from '@meddleware/access-gate-client'
+import { accessGateDeployment, type AccessGateDeployment } from '@meddleware/access-gate-client/deployments'
+import type { SuiNetwork } from '@meddleware/ui'
+import { useNetwork } from '@meddleware/wallet-adapter'
 
 const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {}
 
-/** Active network, from `VITE_NETWORK` (default `testnet`). */
-export const NETWORK: SuiNetwork = (env.VITE_NETWORK as SuiNetwork) || 'testnet'
+/** The active network (read-only ref). */
+export const network = useNetwork().network
+
+/** SuiVision has no localnet; nothing is deployed there, so testnet links are inert. */
+export const explorerNetwork = computed<SuiNetwork>(() => (network.value === 'mainnet' ? 'mainnet' : 'testnet'))
 
 /**
- * gRPC-web endpoint used to build + execute gate transactions and read gate state. The Sui SDK's
- * JSON-RPC client is deprecated, so this must be a gRPC-web-capable endpoint (the Mysten public
- * fullnodes serve gRPC-web at :443 via the browser Fetch transport).
+ * Meddleware's access_gate deployment on the active network. Every gate created here is created
+ * under this package and pays commission to its `PlatformConfig` treasury; the ids are never taken
+ * from configuration.
+ *
+ * @throws {Error} if no deployment is recorded for the active network.
  */
-export const RPC_URLS: Record<SuiNetwork, string> = {
-  testnet: env.VITE_RPC_TESTNET || 'https://fullnode.testnet.sui.io:443',
-  mainnet: env.VITE_RPC_MAINNET || 'https://fullnode.mainnet.sui.io:443',
+export function requireDeployment(): AccessGateDeployment {
+  return accessGateDeployment(network.value)
 }
+
+/** True while a deployment is recorded for the active network. */
+export const deployed = computed(() => {
+  try {
+    accessGateDeployment(network.value)
+    return true
+  } catch {
+    return false
+  }
+})
 
 /** Parse a boolean env flag (`true`/`1`/`yes`/`on`, case-insensitive); anything else ⇒ `fallback`. */
 export function envFlag(value: string | undefined, fallback = false): boolean {

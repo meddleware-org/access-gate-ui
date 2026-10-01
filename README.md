@@ -29,8 +29,8 @@ npm install
 npm run dev
 ```
 
-> `@meddleware/nft-gate-client` resolves from the npm registry. To develop against an unpublished
-> local copy, use `npm link @meddleware/nft-gate-client` or an `overrides` entry.
+> `@meddleware/access-gate-client` resolves from the npm registry. To develop against an unpublished
+> local copy, use `npm link @meddleware/access-gate-client` or an `overrides` entry.
 
 ## Environment variables
 
@@ -38,9 +38,7 @@ All `VITE_*` vars are baked into the static bundle at build time.
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `VITE_NETWORK` | `testnet` | `testnet` or `mainnet` |
-| `VITE_RPC_TESTNET` | `https://fullnode.testnet.sui.io:443` | Sui gRPC-web endpoint for testnet |
-| `VITE_RPC_MAINNET` | `https://fullnode.mainnet.sui.io:443` | Sui gRPC-web endpoint for mainnet |
+| `VITE_NETWORK` | `testnet` | Network the standalone build selects (`testnet` or `mainnet`); embedded, the host's selector rules |
 | `VITE_GATE_FREEZE_REQUIRES_UNPAUSED` | `false` | Created gates can't be frozen while paused |
 | `VITE_GATE_LOCK_COMMISSION_ON_FREEZE` | `false` | Freezing a created gate locks in the platform commission |
 | `VITE_GATE_PAUSE_BLOCKS_DECRYPTION` | `false` | Pausing a created gate also blocks Seal decryption |
@@ -56,12 +54,13 @@ floor, minimum paid price and free-gate fee are enforced on-chain for every gate
 When `AccessGateView` is embedded (e.g. in the dashboard), the host app's build supplies these
 variables.
 
-The `access_gate` package ID and `PlatformConfig` object ID are **hardcoded** in
-`src/constants.ts` (commission enforcement) and are not configurable.
+The `access_gate` package ID and `PlatformConfig` object ID come from
+`@meddleware/access-gate-client/deployments` for the active network (commission enforcement) and
+are not configurable.
 
 ## Docker build
 
-The Docker context is this repo root; `@meddleware/nft-gate-client` resolves from npm, so it must
+The Docker context is this repo root; `@meddleware/access-gate-client` resolves from npm, so it must
 be published first.
 
 ```bash
@@ -71,7 +70,7 @@ docker build --build-arg VITE_NETWORK=testnet -t access-gate-ui:latest .
 ## Architecture
 
 Thin app — no accounting logic. Every PTB (create/setters/airdrop/freeze) and every on-chain read
-comes from `@meddleware/nft-gate-client`; the app only wires forms to those builders and the
+comes from `@meddleware/access-gate-client`; the app only wires forms to those builders and the
 wallet executor. See [CLAUDE.md](CLAUDE.md).
 
 ## License

@@ -10,10 +10,10 @@ Deployed at `sui-access-gate.meddleware.co.uk`.
 | File | Purpose |
 | --- | --- |
 | `src/App.vue` | Root: wallet connect, tabs (My gates / Create gate), gate loading |
-| `src/constants.ts` | Hardcoded `ACCESS_GATE_PACKAGE_ID` + `ACCESS_GATE_PLATFORM_CONFIG_ID` (commission) |
-| `src/config.ts` | `SuiNetwork`, `NETWORK`, `RPC_URLS` |
-| `src/wallet.ts` | wallet-standard integration; `Executor`, `buildExecutor`, `getSuiClient` |
-| `src/gates.ts` | `listMyGates`, `refreshGate`, `adminContext`, `executeTx`, `PACKAGE_ID` |
+| `src/config.ts` | `network`, `requireDeployment()` (ids from access-gate-client `deployments` — commission routing), gate-creation policy |
+| `src/validation.ts` | `imageUrlError` |
+| `src/wallet.ts` | shim over `@meddleware/wallet-adapter`; `Executor`, `buildExecutor`, `getSuiClient` |
+| `src/gates.ts` | `listMyGates`, `refreshGate`, `adminContext`, `buildNewGateTx`, `executeTx`, `errorMessage` |
 | `src/components/CreateGateForm.vue` | `create_gate` form |
 | `src/components/GateList.vue` / `GateCard.vue` | list + per-gate summary/expand |
 | `src/components/GateSettingsPanel.vue` | the 9 setters + pause toggle |
@@ -38,12 +38,12 @@ docker build --build-arg VITE_NETWORK=testnet -t access-gate-ui:latest .
 
 ## Version
 
-Current: `0.1.0` (initial).
+See `package.json`.
 
-## Relationship to nft-gate-client
+## Relationship to access-gate-client
 
-Depends on `@meddleware/nft-gate-client` (`^0.0.3`) for all PTB builders and gate discovery.
-Any new on-chain interaction goes into that library first, then is consumed here.
+Depends on `@meddleware/access-gate-client` for all PTB builders, gate discovery, abort messages and
+the deployment ids. Any new on-chain interaction goes into that library first, then is consumed here.
 
 ## Follow-ups (outside this repo)
 

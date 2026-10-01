@@ -21,8 +21,8 @@ const { executeTx, adminContext, buildMakeGateImmutableTx } = vi.hoisted(() => (
   adminContext: vi.fn((gate: unknown) => ({ gate })),
   buildMakeGateImmutableTx: vi.fn((ctx: unknown) => ({ kind: 'make-immutable', ctx })),
 }))
-vi.mock('../src/gates.js', () => ({ executeTx, adminContext }))
-vi.mock('@meddleware/nft-gate-client', () => ({ buildMakeGateImmutableTx }))
+vi.mock('../src/gates.js', () => ({ executeTx, adminContext, errorMessage: (e: unknown) => (e instanceof Error ? e.message : String(e)) }))
+vi.mock('@meddleware/access-gate-client', () => ({ buildMakeGateImmutableTx }))
 
 import FreezeGateButton from '../src/components/FreezeGateButton.vue'
 

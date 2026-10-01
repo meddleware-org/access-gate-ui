@@ -2,7 +2,7 @@
 // Renders the gates the connected operator administers. Pure presentation — the parent owns the
 // data and passes it in; row-level changes bubble up via `changed` so the parent re-fetches.
 import { UiNotice } from '@meddleware/ui'
-import type { OwnedGate } from '@meddleware/nft-gate-client'
+import type { OwnedGate } from '@meddleware/access-gate-client'
 import GateCard from './GateCard.vue'
 
 defineProps<{

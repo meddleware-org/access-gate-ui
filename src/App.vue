@@ -6,7 +6,7 @@ import {
   suiExplorerUrl, useColorMode,
 } from '@meddleware/ui'
 import { useWallet } from './wallet.js'
-import { NETWORK } from './config.js'
+import { explorerNetwork } from './config.js'
 import AccessGateView from './components/AccessGateView.vue'
 
 const { mode, set } = useColorMode('dark')
@@ -29,7 +29,7 @@ async function onConnect(): Promise<void> {
       <template #actions>
         <template v-if="account">
           <CopyableAddress :address="account.address">
-            <ExplorerLink :href="suiExplorerUrl('account', account.address, NETWORK)" :value="account.address" />
+            <ExplorerLink :href="suiExplorerUrl('account', account.address, explorerNetwork)" :value="account.address" />
           </CopyableAddress>
           <UiButton variant="ghost" @click="disconnect">Disconnect</UiButton>
         </template>

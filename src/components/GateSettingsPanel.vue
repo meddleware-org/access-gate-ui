@@ -1,11 +1,11 @@
 <script setup lang="ts">
 // AdminCap-gated settings for one gate. Each control builds its specific setter PTB via
-// @meddleware/nft-gate-client and executes it; on success it emits `changed` so the parent
+// @meddleware/access-gate-client and executes it; on success it emits `changed` so the parent
 // re-reads the gate's on-chain state.
 import { ref } from 'vue'
 import type { Transaction } from '@mysten/sui/transactions'
 import { UiButton, UiNotice } from '@meddleware/ui'
-import type { OwnedGate } from '@meddleware/nft-gate-client'
+import type { OwnedGate } from '@meddleware/access-gate-client'
 import {
   buildSetPaymentRecipientTx,
   buildSetPausedTx,
@@ -15,8 +15,9 @@ import {
   buildSetNftNameTx,
   buildSetNftImageUrlTx,
   buildSetNftDescriptionTx,
-} from '@meddleware/nft-gate-client'
-import { adminContext, buildPriceChangeTx, executeTx } from '../gates.js'
+} from '@meddleware/access-gate-client'
+import { adminContext, buildPriceChangeTx, errorMessage, executeTx } from '../gates.js'
+import { imageUrlError } from '../validation.js'
 import { suiToMist } from '../pricing.js'
 
 const props = defineProps<{
@@ -44,13 +45,20 @@ async function run(field: string, build: () => Transaction | Promise<Transaction
     await executeTx(await build())
     emit('changed')
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = errorMessage(e)
   } finally {
     busy.value = null
   }
 }
 
 const ctx = () => adminContext(props.gate)
+
+/** The image setter, refusing a URL that is not https or a data:image URI. */
+function buildImageTx(): Transaction {
+  const err = imageUrlError(nftImageUrl.value)
+  if (err) throw new Error(err)
+  return buildSetNftImageUrlTx(ctx(), nftImageUrl.value.trim())
+}
 </script>
 
 <template>
@@ -101,7 +109,7 @@ const ctx = () => adminContext(props.gate)
         <span>NFT image URL</span>
         <input v-model="nftImageUrl" type="url" spellcheck="false" />
       </label>
-      <UiButton variant="secondary" :disabled="busy !== null" @click="run('image', () => buildSetNftImageUrlTx(ctx(), nftImageUrl))">
+      <UiButton variant="secondary" :disabled="busy !== null" @click="run('image', buildImageTx)">
         {{ busy === 'image' ? '…' : 'Update' }}
       </UiButton>
     </div>

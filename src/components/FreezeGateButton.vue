@@ -4,9 +4,9 @@
 // paused shows why instead of offering a transaction that would abort.
 import { computed, ref } from 'vue'
 import { UiButton, UiNotice } from '@meddleware/ui'
-import { buildMakeGateImmutableTx } from '@meddleware/nft-gate-client'
-import type { OwnedGate } from '@meddleware/nft-gate-client'
-import { adminContext, executeTx } from '../gates.js'
+import { buildMakeGateImmutableTx } from '@meddleware/access-gate-client'
+import type { OwnedGate } from '@meddleware/access-gate-client'
+import { adminContext, errorMessage, executeTx } from '../gates.js'
 
 const props = defineProps<{
   /** The gate to freeze. */
@@ -30,7 +30,7 @@ async function freeze(): Promise<void> {
     await executeTx(buildMakeGateImmutableTx(adminContext(props.gate)))
     emit('changed')
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = errorMessage(e)
   } finally {
     busy.value = false
     confirming.value = false

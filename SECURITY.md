@@ -3,12 +3,12 @@
 ## Scope
 
 This policy covers security issues in the `@meddleware/access-gate-ui` application/library source
-(`src/**`) — the gate operator console, the `AccessGateView` library export, the hardcoded
-commission constants, and the gate form components.
+(`src/**`) — the gate operator console, the `AccessGateView` library export, the commission-routing
+deployment binding, and the gate form components.
 
 It does not cover:
 
-- `@meddleware/nft-gate-client` or the `access-gate-sui` on-chain package (see their own policies)
+- `@meddleware/access-gate-client` or the `access-gate-sui` on-chain package (see their own policies)
 - `@meddleware/wallet-adapter` or the wallet extension (which confirms every signature)
 
 ## Security model (invariants)
@@ -16,17 +16,18 @@ It does not cover:
 These invariants are load-bearing. A report demonstrating that any is violated is in scope and
 treated as high severity:
 
-1. **Commission constants are hardcoded and must fail closed.** `ACCESS_GATE_PACKAGE_ID` and
-   `ACCESS_GATE_PLATFORM_CONFIG_ID` are compile-time per-network constants (deliberately not env
-   vars) so purchases route commission on-chain; an empty/invalid constant for the active network
-   must abort a purchase/gate action rather than build against an empty package id.
-2. **No secret is a `VITE_*` value.** `VITE_NETWORK`, `VITE_RPC_*`, `VITE_DOCS_URL`/`VITE_DEV_URL`
+1. **Commission routing comes from the published deployment and fails closed.** The package and
+   `PlatformConfig` ids come from `@meddleware/access-gate-client/deployments` (deliberately not env
+   vars or UI fields), so purchases route commission on-chain. On a network without a recorded
+   deployment, `requireDeployment()` throws and nothing is built.
+2. **No secret is a `VITE_*` value.** `VITE_NETWORK`, `VITE_DOCS_URL`/`VITE_DEV_URL`
    and the `VITE_GATE_*` creation policy are all non-secret. The gate policy is a property of this
    tool: it shapes the gates the tool creates but binds nobody calling the contract directly —
    buyers verify a gate's `GatePolicy` on-chain.
 3. **Freeze is irreversible and guarded.** `make_gate_immutable` is behind a typed confirmation and
    cannot be triggered accidentally.
 4. **No dynamic HTML sinks.** Gate `name`/`description` and any on-chain string render as text.
+   NFT image URLs written on-chain must be https or a `data:image/` URI.
 5. **On-chain truth.** All accounting, commission, and lifecycle live in the Move package, not JS.
 
 ## Supported versions

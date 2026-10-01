@@ -10,37 +10,45 @@ the main Meddleware dashboard alongside the other tools.
 ## Architectural invariants
 
 - **Thin app — no on-chain logic here.** Every PTB (`create_gate`, the setters, `airdrop`,
-  `make_gate_immutable`) and every read (`fetchOwnedGates`, `fetchGate`) comes from
-  `@meddleware/nft-gate-client`. The app only wires forms → builders → the wallet executor.
+  `make_gate_immutable`) and every read (`fetchOwnedGates`, `fetchGate`, `fetchPlatformConfig`)
+  comes from `@meddleware/access-gate-client`. The app only wires forms → builders → the wallet
+  executor. Failed actions show `errorMessage(e)`, which names the `access_gate` abort.
   Do not construct `moveCall`s or parse RPC objects in this repo — add them to the library so
   the future dashboard reuses them.
-- **Commission enforcement (hardcoded).** `src/constants.ts` hardcodes `ACCESS_GATE_PACKAGE_ID`
-  and `ACCESS_GATE_PLATFORM_CONFIG_ID` per network — copied from `@meddleware/walrus-relay`'s
-  `constants.ts` (same deployment). Gates are always created under this package, so every
-  purchase routes the 20 bps commission to Meddleware. The package ID is **not** exposed as an
-  env var or UI field. Do not make it configurable.
+- **Commission enforcement.** The `access_gate` package and `PlatformConfig` ids come from
+  `@meddleware/access-gate-client/deployments` (generated from `access-gate-sui`'s published
+  records) through `requireDeployment()` in `src/config.ts`. Gates are always created under that
+  package, so every purchase routes the platform commission to Meddleware. The ids are **not**
+  exposed as env vars or UI fields. Do not make them configurable.
+- **One network source.** The network is wallet-adapter's shared `useNetwork()` selector (the
+  standalone `main.ts` selects `VITE_NETWORK`). The client, the ids and explorer links all follow
+  it; gate lists reload on a network change. On a network without a recorded deployment the view
+  shows a notice and builds nothing.
 - **Wallet-agnostic + shared.** Wallet access goes through `src/wallet.ts`, a thin shim over the
-  shared `@meddleware/wallet-adapter` singleton (binds this app's `RPC_URLS`). The singleton means
+  shared `@meddleware/wallet-adapter` singleton (client and executor for the selected network). The singleton means
   that when `AccessGateView` is embedded in the dashboard alongside other tool views, they all
   share one connection. Do not reintroduce a local wallet-standard implementation or a specific
   wallet adapter.
-- **Operator-configurable env: network/RPC + gate-creation policy.** `VITE_NETWORK`,
-  `VITE_RPC_TESTNET/MAINNET`, the `GatePolicy` flags (`VITE_GATE_FREEZE_REQUIRES_UNPAUSED`,
+- **Operator-configurable env: network + gate-creation policy.** `VITE_NETWORK`, the `GatePolicy`
+  flags (`VITE_GATE_FREEZE_REQUIRES_UNPAUSED`,
   `VITE_GATE_LOCK_COMMISSION_ON_FREEZE`, `VITE_GATE_PAUSE_BLOCKS_DECRYPTION`,
   `VITE_GATE_PAUSE_BLOCKS_ACCESS`; default false) and the price floor (`VITE_GATE_MIN_PRICE_MIST` =
   `auto` | a higher MIST floor, `VITE_GATE_ALLOW_FREE`). No commission or package knobs — commission,
   minimum paid price and the free-gate fee live on-chain in `PlatformConfig`, read live (fail closed
   if unreadable).
+- **Checked inputs.** NFT image URLs must be https or a `data:image/` URI (`src/validation.ts`).
+- **Confirmed writes.** `executeTx` throws if the transaction fails on-chain (carrying the abort) or
+  cannot be confirmed — never reports an unconfirmed write as done.
 
 ## Layer map
 
 | File | Responsibility |
 | --- | --- |
-| `src/constants.ts` | Hardcoded package + PlatformConfig ids; `accessGateNftType` |
-| `src/config.ts` | `SuiNetwork`, `NETWORK`, `RPC_URLS`, `GATE_POLICY`, `GATE_MIN_PRICE`, `GATE_ALLOW_FREE` (from env) |
+| `src/config.ts` | `network` (wallet-adapter selector), `explorerNetwork`, `requireDeployment()` / `deployed` (ids from access-gate-client `deployments`), `GATE_POLICY`, `GATE_MIN_PRICE`, `GATE_ALLOW_FREE` (from env) |
+| `src/validation.ts` | `imageUrlError` — https or `data:image/` only |
 | `src/pricing.ts` | Pure price rules: exact `suiToMist`/`mistToSui`, `gatePriceError` |
-| `src/wallet.ts` | Shim over `@meddleware/wallet-adapter` binding this app's `RPC_URLS`; re-exports `useWallet` / `getSuiClient` / `buildExecutor` / `Executor` |
-| `src/gates.ts` | Binds the network + hardcoded package to nft-gate-client: `listMyGates`, `refreshGate`, `adminContext`, `executeTx`, `PLATFORM_CONFIG_ID`, `getPlatformConfig`, `minimumGatePriceMist`, `buildPriceChangeTx`, `buildGateAirdropTx` |
+| `src/wallet.ts` | Shim over `@meddleware/wallet-adapter` for the selected network; re-exports `useWallet` / `getSuiClient` / `buildExecutor` / `Executor` |
+| `src/gates.ts` | Binds the network's deployment to access-gate-client: `listMyGates`, `refreshGate`, `adminContext`, `buildNewGateTx`, `executeTx`, `errorMessage`, `getPlatformConfig`, `minimumGatePriceMist`, `buildPriceChangeTx`, `buildGateAirdropTx` |
 | `src/App.vue` | Standalone shell only: `AppHeader` (+ wallet connect, `ColorModeControl`) + `<AccessGateView>` + `AppFooter` |
 | `src/components/AccessGateView.vue` | Core tool UI (tabs, gate loading via an `account` watcher). Exported from `src/index.ts` for inline embedding. |
 | `src/index.ts` | Library entry — exports `AccessGateView` for the dashboard to render inline |
@@ -59,7 +67,7 @@ This package is **both** a standalone SPA (`App.vue` + `main.ts`, `vite build`) 
 
 1. `App.vue` connects a wallet and calls `listMyGates(address)` → `fetchOwnedGates` (owned
    `AdminCap`s → their `gate_id`s → the `Gate` objects).
-2. A management control builds its PTB with a `nft-gate-client` `build*Tx` + `adminContext(gate)`,
+2. A management control builds its PTB with an access-gate-client `build*Tx` + `adminContext(gate)`,
    then `executeTx(tx)` signs/executes/awaits.
 3. On success the component emits `changed`; `App.vue` re-runs `listMyGates` to refresh state.
 
@@ -71,7 +79,7 @@ confirmation. Keep that guard.
 
 ## What NOT to do
 
-- Do not add `moveCall`s / RPC parsing here — extend `@meddleware/nft-gate-client` instead.
+- Do not add `moveCall`s / RPC parsing here — extend `@meddleware/access-gate-client` instead.
 - Do not make the access_gate package ID configurable (breaks commission enforcement).
 - Do not add accounting/price-derivation logic — on-chain is the source of truth.
 - Do not expose the platform (Meddleware-only) setters `set_platform_treasury` /
@@ -88,11 +96,11 @@ confirmation. Keep that guard.
 
 - **Embed `AccessGateView`** (`import { AccessGateView } from '@meddleware/access-gate-ui'`) with the
   shared `@meddleware/wallet-adapter`; the dual app+library contract and the `account`-watcher data
-  flow. SDK-level builders/reads are documented in `@meddleware/nft-gate-client`.
+  flow. SDK-level builders/reads are documented in `@meddleware/access-gate-client`.
 
 ### White-label operator path (to write later)
 
 - Operators running the console for **their own gates** under the shared platform: what is
-  operator-controlled (gate config, airdrops, freeze) vs fixed (the hardcoded package id + 20 bps
+  operator-controlled (gate config, airdrops, freeze) vs fixed (the deployment ids from `deployments` +
   commission routing to Meddleware — deliberately not configurable). Branding seams
   (`@meddleware/design-tokens`, `AppHeader`). Note the platform-only setters are intentionally hidden.

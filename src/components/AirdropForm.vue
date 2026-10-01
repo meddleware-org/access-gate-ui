@@ -3,9 +3,9 @@
 // pays the platform the commission a purchase at the current price would carry.
 import { onMounted, ref } from 'vue'
 import { UiButton, UiNotice } from '@meddleware/ui'
-import { gateCommissionMist } from '@meddleware/nft-gate-client'
-import type { OwnedGate } from '@meddleware/nft-gate-client'
-import { buildGateAirdropTx, executeTx, getPlatformConfig } from '../gates.js'
+import { gateCommissionMist } from '@meddleware/access-gate-client'
+import type { OwnedGate } from '@meddleware/access-gate-client'
+import { buildGateAirdropTx, errorMessage, executeTx, getPlatformConfig } from '../gates.js'
 import { mistToSui } from '../pricing.js'
 
 const props = defineProps<{
@@ -39,7 +39,7 @@ async function airdrop(): Promise<void> {
     recipient.value = ''
     emit('changed')
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = errorMessage(e)
   } finally {
     busy.value = false
   }
