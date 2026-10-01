@@ -9,6 +9,8 @@ the main Meddleware dashboard alongside the other tools.
 
 ## Architectural invariants
 
+- **One wallet-adapter in a host.** Declare `@meddleware/wallet-adapter` as a peerDependency (`>=0.0.12 <0.2.0`, plus a devDependency):
+  the host's single copy must satisfy every embedded tool, or each gets its own connection.
 - **Thin app — no on-chain logic here.** Every PTB (`create_gate`, the setters, `airdrop`,
   `make_gate_immutable`) and every read (`fetchOwnedGates`, `fetchGate`, `fetchPlatformConfig`)
   comes from `@meddleware/access-gate-client`. The app only wires forms → builders → the wallet
