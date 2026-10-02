@@ -2,7 +2,7 @@
 // One administered gate: summary of its on-chain state, expandable into the management surface
 // (settings, airdrop, freeze). A frozen gate shows a locked notice instead of controls.
 import { ref } from 'vue'
-import { UiCard, UiButton, UiNotice } from '@meddleware/ui'
+import { UiCard, UiButton, UiNotice, safeHref } from '@meddleware/ui'
 import type { OwnedGate } from '@meddleware/access-gate-client'
 import GateSettingsPanel from './GateSettingsPanel.vue'
 import AirdropForm from './AirdropForm.vue'
@@ -19,6 +19,10 @@ const open = ref(false)
 /** Short 0x…tail form for object ids. */
 function short(id: string): string {
   return id.length > 14 ? `${id.slice(0, 8)}…${id.slice(-4)}` : id
+}
+/** seal-ui, opened on this gate (the id is chain data, so it is encoded into the query). */
+function sealUrl(gateId: string): string {
+  return `https://sui-seal.meddleware.co.uk/?gate=${encodeURIComponent(gateId)}`
 }
 function priceLabel(mist: bigint): string {
   return mist === 0n ? 'Free' : `${(Number(mist) / 1e9).toString()} SUI`
@@ -50,7 +54,7 @@ function priceLabel(mist: bigint): string {
       <UiButton variant="ghost" @click="open = !open">{{ open ? 'Hide' : 'Manage' }}</UiButton>
       <a
         class="seal-link"
-        :href="`https://sui-seal.meddleware.co.uk/?gate=${gate.gateId}`"
+        :href="safeHref(sealUrl(gate.gateId))"
         target="_blank"
         rel="noopener"
         title="Seal-encrypt content that only this gate's pass-holders can unlock"
