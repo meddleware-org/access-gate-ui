@@ -18,7 +18,7 @@ import {
 } from '@meddleware/access-gate-client'
 import { adminContext, buildPriceChangeTx, errorMessage, executeTx } from '../gates.js'
 import { imageUrlError } from '../validation.js'
-import { suiToMist } from '../pricing.js'
+import { mistToSui, suiToMist } from '../pricing.js'
 
 const props = defineProps<{
   /** The gate being administered (supplies gateId + adminCapId + current values). */
@@ -27,7 +27,7 @@ const props = defineProps<{
 const emit = defineEmits<{ (e: 'changed'): void }>()
 
 // Local editable copies seeded from current on-chain state.
-const priceSui = ref<string | number>((Number(props.gate.priceMist) / 1e9).toString())
+const priceSui = ref<string | number>(mistToSui(props.gate.priceMist))
 const paymentRecipient = ref(props.gate.paymentRecipient)
 const defaultUses = ref(props.gate.defaultUses.toString())
 const nftName = ref(props.gate.nftName)

@@ -7,6 +7,7 @@ import type { OwnedGate } from '@meddleware/access-gate-client'
 import GateSettingsPanel from './GateSettingsPanel.vue'
 import AirdropForm from './AirdropForm.vue'
 import FreezeGateButton from './FreezeGateButton.vue'
+import { mistToSui } from '../pricing.js'
 
 defineProps<{
   /** The gate to display and manage. */
@@ -25,7 +26,7 @@ function sealUrl(gateId: string): string {
   return `https://sui-seal.meddleware.co.uk/?gate=${encodeURIComponent(gateId)}`
 }
 function priceLabel(mist: bigint): string {
-  return mist === 0n ? 'Free' : `${(Number(mist) / 1e9).toString()} SUI`
+  return mist === 0n ? 'Free' : `${mistToSui(mist)} SUI`
 }
 </script>
 

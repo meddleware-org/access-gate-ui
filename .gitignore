@@ -4,3 +4,8 @@ target/
 .wrangler/
 *.tsbuildinfo
 .DS_Store
+
+# Local environment overrides (never commit)
+.env
+.env.*
+!.env.example
