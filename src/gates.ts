@@ -85,13 +85,13 @@ export async function buildGateAirdropTx(gate: OwnedGate, recipient: string): Pr
  * one, otherwise the error's own message.
  */
 export function errorMessage(e: unknown): string {
-  let originalId: string | undefined
+  let abort: string | null | undefined
   try {
-    originalId = requireDeployment().originalId
+    abort = abortMessage(e, requireDeployment().originalId)
   } catch {
-    originalId = undefined
+    abort = undefined
   }
-  return abortMessage(e, originalId) ?? (e instanceof Error ? e.message : String(e))
+  return abort ?? (e instanceof Error ? e.message : String(e))
 }
 
 /**

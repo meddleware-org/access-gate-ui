@@ -10,7 +10,6 @@ import {
   buildSetPaymentRecipientTx,
   buildSetPausedTx,
   buildSetDefaultUsesTx,
-  buildSetSoulboundTx,
   buildSetAutoBurnAtZeroTx,
   buildSetNftNameTx,
   buildSetNftImageUrlTx,
@@ -84,10 +83,10 @@ function buildImageTx(): Transaction {
       </UiButton>
     </div>
 
-    <div class="row">
+    <div v-if="gate.defaultUses > 0n" class="row">
       <label>
         <span>Default credits</span>
-        <input v-model="defaultUses" type="number" min="0" step="1" />
+        <input v-model="defaultUses" type="number" min="1" step="1" />
       </label>
       <UiButton variant="secondary" :disabled="busy !== null" @click="run('uses', () => buildSetDefaultUsesTx(ctx(), BigInt(defaultUses || '0')))">
         {{ busy === 'uses' ? '…' : 'Update' }}
@@ -127,9 +126,6 @@ function buildImageTx(): Transaction {
     <div class="toggles">
       <UiButton variant="ghost" :disabled="busy !== null" @click="run('paused', () => buildSetPausedTx(ctx(), !gate.paused))">
         {{ gate.paused ? 'Unpause purchases' : 'Pause purchases' }}
-      </UiButton>
-      <UiButton variant="ghost" :disabled="busy !== null" @click="run('soulbound', () => buildSetSoulboundTx(ctx(), !gate.soulbound))">
-        {{ gate.soulbound ? 'Make future NFTs transferable' : 'Make future NFTs soulbound' }}
       </UiButton>
       <UiButton variant="ghost" :disabled="busy !== null" @click="run('autoburn', () => buildSetAutoBurnAtZeroTx(ctx(), !gate.autoBurnAtZero))">
         {{ gate.autoBurnAtZero ? 'Keep spent NFTs as receipts' : 'Auto-burn spent NFTs' }}

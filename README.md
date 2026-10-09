@@ -18,7 +18,7 @@ Meddleware dashboard alongside the other Sui tools.
 - Connect any Sui wallet (wallet-standard)
 - **Create a gate** — price, uses (unlimited pass or single-use), soulbound, auto-burn, and NFT metadata
 - **My gates** — discover every gate the connected wallet administers (via its owned `AdminCap`s)
-- **Manage** — update price, payment recipient, default uses, soulbound, auto-burn, and NFT metadata; pause/unpause purchases
+- **Manage** — update price, payment recipient, default uses (single-use gates; the pass kind and soulbound flag are fixed at creation), auto-burn, and NFT metadata; pause/unpause purchases
 - **Airdrop** — grant access NFTs to any address for free
 - **Freeze** — make a gate immutable (irreversible, typed confirmation)
 
