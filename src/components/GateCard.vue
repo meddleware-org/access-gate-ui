@@ -109,7 +109,7 @@ function priceLabel(mist: bigint): string {
   color: var(--muted);
 }
 .badge--warn {
-  color: var(--warning);
+  color: var(--warning-text);
   border-color: currentColor;
 }
 .actions {

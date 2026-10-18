@@ -51,6 +51,11 @@ The four `VITE_GATE_*` restriction flags form the gate's on-chain `GatePolicy`: 
 immutably on every gate the tool creates, and anyone can read it from the gate. The policy is set by
 this tool, not enforced on gates created by calling the contract directly. The platform's commission
 floor, minimum paid price and free-gate fee are enforced on-chain for every gate of the package.
+The contract rejects a policy whose pause blocks decryption or access unless freezing also requires the gate
+to be unpaused (`E_POLICY_COMBINATION`): `VITE_GATE_PAUSE_BLOCKS_DECRYPTION` or
+`VITE_GATE_PAUSE_BLOCKS_ACCESS` needs `VITE_GATE_FREEZE_REQUIRES_UNPAUSED=true`. The configured policy is
+validated with the client's `validateGatePolicy` when the view mounts; an invalid combination shows a
+configuration error and Create is disabled, so no failing transaction reaches the wallet.
 When `AccessGateView` is embedded (e.g. in the dashboard), the host app's build supplies these
 variables.
 

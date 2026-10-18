@@ -4,7 +4,7 @@
 // configurable (commission enforcement). Operators configure only the gate-creation policy
 // (restrictions + minimum price) through VITE_*.
 import { computed } from 'vue'
-import type { GatePolicy } from '@meddleware/access-gate-client'
+import { validateGatePolicy, type GatePolicy } from '@meddleware/access-gate-client'
 import { accessGateDeployment, type AccessGateDeployment } from '@meddleware/access-gate-client/deployments'
 import type { SuiNetwork } from '@meddleware/ui'
 import { useNetwork } from '@meddleware/wallet-adapter'
@@ -63,6 +63,23 @@ export const GATE_POLICY: GatePolicy = {
   pauseBlocksDecryption: envFlag(env.VITE_GATE_PAUSE_BLOCKS_DECRYPTION),
   pauseBlocksAccess: envFlag(env.VITE_GATE_PAUSE_BLOCKS_ACCESS),
 }
+
+/**
+ * Why a gate policy cannot be created, or `null` when it can. The contract rejects a policy whose
+ * pause blocks decryption or access unless freezing also requires the gate to be unpaused
+ * (`E_POLICY_COMBINATION`, code 15); the check is the client's, so the console and
+ * `buildCreateGateTx` agree.
+ */
+export function gatePolicyError(policy: GatePolicy): string | null {
+  const violation = validateGatePolicy(policy)
+  return violation ? `Invalid gate configuration (${violation.name}): ${violation.message}` : null
+}
+
+/**
+ * Set when the operator's `VITE_GATE_*` flags form a combination that aborts every create. The
+ * console shows it as a configuration error and refuses to build a create transaction.
+ */
+export const GATE_POLICY_ERROR: string | null = gatePolicyError(GATE_POLICY)
 
 /** Minimum paid gate price: the on-chain minimum, or a higher fixed MIST floor. */
 export type MinPriceSetting = { kind: 'auto' } | { kind: 'fixed'; mist: bigint }

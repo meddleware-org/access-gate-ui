@@ -10,7 +10,7 @@ import { ref, watch } from 'vue'
 import { AppTabNav, UiNotice, UiTabPanel, UiToolIntro, type AppTab } from '@meddleware/ui'
 import { WalletGuard } from '@meddleware/wallet-adapter'
 import type { OwnedGate } from '@meddleware/access-gate-client'
-import { deployed, network } from '../config.js'
+import { deployed, GATE_POLICY_ERROR, network } from '../config.js'
 import { errorMessage, listMyGates } from '../gates.js'
 import { useWallet } from '../wallet.js'
 import CreateGateForm from './CreateGateForm.vue'
@@ -71,6 +71,8 @@ function onCreated(): void {
 
 <template>
   <UiToolIntro>Create and manage on-chain access gates on Sui ({{ network }}).</UiToolIntro>
+
+  <UiNotice v-if="GATE_POLICY_ERROR" type="error">{{ GATE_POLICY_ERROR }}</UiNotice>
 
   <UiNotice v-if="!deployed" type="error">
     The access_gate contract is not deployed on {{ network }}. Switch to a supported network.

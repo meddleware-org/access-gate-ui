@@ -7,7 +7,7 @@ import { UiCard, UiButton, UiNotice, UiStepper, type StepperStep } from '@meddle
 import { isRestrictivePolicy } from '@meddleware/access-gate-client'
 import { buildNewGateTx, errorMessage, executeTx, getPlatformConfig, minimumGatePriceMist } from '../gates.js'
 import { imageUrlError } from '../validation.js'
-import { GATE_ALLOW_FREE, GATE_POLICY } from '../config.js'
+import { GATE_ALLOW_FREE, GATE_POLICY, GATE_POLICY_ERROR } from '../config.js'
 import { gatePriceError, mistToSui, suiToMist } from '../pricing.js'
 
 const props = defineProps<{
@@ -54,6 +54,10 @@ onMounted(async () => {
 async function submit(): Promise<void> {
   error.value = null
   okDigest.value = null
+  if (GATE_POLICY_ERROR) {
+    error.value = GATE_POLICY_ERROR
+    return
+  }
   submitting.value = true
   try {
     const priceMist = suiToMist(priceSui.value)
@@ -174,7 +178,7 @@ async function submit(): Promise<void> {
 
         <div class="nav-row">
           <UiButton type="button" variant="secondary" @click="step--">Back</UiButton>
-          <UiButton type="submit" :disabled="submitting">
+          <UiButton type="submit" :disabled="submitting || GATE_POLICY_ERROR !== null">
             {{ submitting ? 'Creating…' : 'Create gate' }}
           </UiButton>
         </div>
