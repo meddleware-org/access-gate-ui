@@ -200,7 +200,7 @@ gate runs in `node-ci.yml` (and so in the image release, F17) and in `npm-publis
 
 ### F12 — The operator's gate policy can be an invalid combination that aborts every create
 
-**Severity:** Low   **Disposition:** RESOLVED (0.1.37, commit pending; access-gate-client 0.0.9)
+**Severity:** Low   **Disposition:** RESOLVED (0.1.37, commit `7797228`; access-gate-client 0.0.9)
 **Where:** `src/config.ts` (`GATE_POLICY` from `VITE_GATE_*`), `src/components/CreateGateForm.vue:78`; the
 republished `access_gate::new_gate_policy`
 **Issue:** the contract (`0xd7ddaa94…`) rejects a policy whose pause blocks decryption or access unless
@@ -239,7 +239,7 @@ token-deployer-ui and ui do); verified by reading both workflows 2026-10-09 and 
 
 ### F14 — `--warning` drawn as text on the light canvas
 
-**Severity:** Low   **Disposition:** RESOLVED (0.1.37, commit pending)
+**Severity:** Low   **Disposition:** RESOLVED (0.1.37, commit `7797228`)
 **Where:** `src/components/GateCard.vue:112` (`.badge--warn { color: var(--warning); border-color: currentColor }`)
 **Issue:** `--warning` is the bright yellow fill (`#e0a500`, 2.0:1 on the light canvas). The warning badge
 on a gate card (paused or similar caution) is text on the light theme. design-tokens 0.1.9 (the
@@ -255,7 +255,7 @@ shared components only.
 
 ### F15 — `VITE_NETWORK` is missing from `.env.example`
 
-**Severity:** Info   **Disposition:** RESOLVED (0.1.37, commit pending)
+**Severity:** Info   **Disposition:** RESOLVED (0.1.37, commit `7797228`)
 **Where:** `.env.example` (lists `VITE_DOCS_URL`, `VITE_DEV_URL`, the four `VITE_GATE_*` flags,
 `VITE_GATE_MIN_PRICE_MIST`, `VITE_GATE_ALLOW_FREE`); `src/main.ts:13` reads `VITE_NETWORK`
 **Issue:** the VUE lens requires every variable the code reads to appear in `.env.example`. `VITE_NETWORK`
@@ -316,7 +316,7 @@ the hosts are fixed for mainnet.
 
 ### F19 — The npm publish gate is a subset of CI
 
-**Severity:** Low   **Disposition:** RESOLVED (0.1.37, commit pending)
+**Severity:** Low   **Disposition:** RESOLVED (0.1.37, commit `7797228`)
 **Where:** `.github/workflows/npm-publish.yml`
 **Issue:** the npm job's `verify` runs `npm ci`, the audit gate, type-check and the unit tests, not the
 full CI workflow (linters, licence check). The image release (F17) does run the full workflow on the
@@ -516,7 +516,7 @@ the suite is hermetic. The suite runs in `node-ci.yml` and so in both release ga
 
 - [x] builds; type-check, three linters, unit tests green (2026-10-18, 49 tests); no secrets in source
 - [x] no `v-html`; the one dynamic `:href` is allowlisted (F2, F7); no secret `VITE_*`
-- [x] `VITE_*` inventory matching `.env.example` — F15 fixed 0.1.37; `tests/env-example.test.ts` pins it (commit pending)
+- [x] `VITE_*` inventory matching `.env.example` — F15 fixed 0.1.37; `tests/env-example.test.ts` pins it (commit `7797228`)
 
 ### pre-testnet
 
@@ -526,8 +526,8 @@ the suite is hermetic. The suite runs in `node-ci.yml` and so in both release ga
 - [x] consumed IDs are the latest on-chain version — live bundle carries `0xd7ddaa94…` and `0x3f81489d…` only (B.SC-1)
 - [x] signing UX shows action, amount and recipients; double-submit blocked; storage not used
 - [x] every test project runs in CI — F13: `node-ci.yml` `npm test` (`38b4d33`), called by both release workflows (0.1.37)
-- [x] colour: warning text meets AA on the light theme — F14: `--warning-text`, pinned by `tests/design-tokens-used.test.ts` (0.1.37, commit pending)
-- [x] a policy built from configuration cannot be invalid — F12: `validateGatePolicy` at load, notice + disabled Create, `tests/config.test.ts`, `tests/create-gate-form.test.ts` (0.1.37, commit pending)
+- [x] colour: warning text meets AA on the light theme — F14: `--warning-text`, pinned by `tests/design-tokens-used.test.ts` (0.1.37, commit `7797228`)
+- [x] a policy built from configuration cannot be invalid — F12: `validateGatePolicy` at load, notice + disabled Create, `tests/config.test.ts`, `tests/create-gate-form.test.ts` (0.1.37, commit `7797228`)
 
 ### pre-mainnet
 
