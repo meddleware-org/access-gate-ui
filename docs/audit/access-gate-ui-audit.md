@@ -13,16 +13,16 @@
 **Hosting:** container image on static-server (CSP and HSTS from the server); no static-host `_headers` file
 **Embedding hosts:** the dashboard (`AccessGateView`, no shell chrome; dashboard requires `^0.1.35`)
 **VITE_\* inventory:** `VITE_NETWORK` (testnet|mainnet, baked, selects the network only — never ids), `VITE_GATE_FREEZE_REQUIRES_UNPAUSED` / `VITE_GATE_LOCK_COMMISSION_ON_FREEZE` / `VITE_GATE_PAUSE_BLOCKS_DECRYPTION` / `VITE_GATE_PAUSE_BLOCKS_ACCESS` (gate policy, baked), `VITE_GATE_MIN_PRICE_MIST`, `VITE_GATE_ALLOW_FREE` (price rules, baked), `VITE_DOCS_URL` / `VITE_DEV_URL` (header links, baked); all public, none selects an on-chain id (F15: all listed in `.env.example`, pinned by `env-example.test.ts`)
-**Images:** `quay.io/meddleware-org/access-gate-ui:0.1.36@sha256:40219349…8b13` (Docker Hub mirror; cosign keyless, SPDX SBOM attestation, build provenance; verified 2026-10-09, `verify-digests.sh` 16/16)
+**Images:** `quay.io/meddleware-org/access-gate-ui:0.1.37@sha256:712a7ee487f4ace04adb91233a72f3f29927e8ae84417eec7d4e886917876299` (Docker Hub mirror, same digest; cosign keyless signature verified 2026-10-18 against the workflow-anchored identity, `verify-digests.sh` 16/16; SPDX SBOM attestation, build provenance). Superseded 0.1.36 was `sha256:40219349…8b13`
 **Base images:** build `node:24-slim@sha256:0e0ff40c…f9b6`; runtime `quay.io/meddleware-org/static-server:0.1.8@sha256:e32cf42b…4000`
 **Runtime user:** `USER 65534:65534`   **Runtime FS:** read-only root, no writable mounts
 **Deployed by:** `post-bootstrap/access-gate-ui/overlays/default`; digest from `config/images.yaml`
 **Build args:** `VITE_NETWORK`, the four `VITE_GATE_*` policy flags, `VITE_GATE_MIN_PRICE_MIST`, `VITE_GATE_ALLOW_FREE` and `CSP` — none secret, none a test switch
-**Deployment status:** npm v0.1.36 (2026-10-09); image `quay.io/meddleware-org/access-gate-ui` serving `sui-access-gate.meddleware.co.uk` at 0.1.36 (`sha256:40219349…`, deployed 2026-10-09; live bundle carries only `access_gate` `0xd7ddaa94…` and PlatformConfig `0x3f81489d…`); embedded in dashboard 0.1.84
-**Review date:** 2026-09-18 (first pass) · re-verified 2026-10-03 · re-verified 2026-10-09 · fixes 2026-10-18 (0.1.37)
+**Deployment status:** npm v0.1.37 (2026-10-18); image `quay.io/meddleware-org/access-gate-ui` serving `sui-access-gate.meddleware.co.uk` at 0.1.37 (`sha256:712a7ee4…6299`; release tag `v0.1.37` = `1875326`; released, signature verified and deployed 2026-10-18, rollout succeeded; 0.1.36 `sha256:40219349…` was deployed 2026-10-09; live bundle carries only `access_gate` `0xd7ddaa94…` and PlatformConfig `0x3f81489d…`, checked 2026-10-18; live headers re-checked 2026-10-18); embedded in dashboard 0.1.85
+**Review date:** 2026-09-18 (first pass) · re-verified 2026-10-03 · re-verified 2026-10-09 · fixes 2026-10-18 (0.1.37, released and deployed)
 **Reviewer:** Internal review
 **Severity ceiling:** Medium — the console signs AdminCap-gated gate transactions and pays commission and fees with the operator's wallet; it holds no keys and every rule is enforced on-chain.
-**Status:** re-verified 2026-10-09; F12–F15 and F19 fixed in 0.1.37 (2026-10-18)
+**Status:** re-verified 2026-10-09; F12–F15 and F19 fixed in 0.1.37 (2026-10-18; released and deployed 2026-10-18, signature verified, rollout succeeded)
 
 ---
 
@@ -337,7 +337,7 @@ with provenance, tag == version checked, idempotent, and gated on `NPM_PUBLISH`.
 **Impact:** a workflow added by someone with write access could sign an image the check would accept.
 **Remediation / evidence:** the repository is the signing boundary; anchoring to
 `docker-publish.yml@refs/tags/v*` is a `COSIGN_IDENTITY_REGEXP` override in the workspace script. The
-deployed digest verified 2026-10-09 (16/16).
+deployed digests verified 2026-10-09 (0.1.36) and 2026-10-18 (0.1.37), 16/16 both times; the 2026-10-18 run used the workflow-anchored identity `docker-publish.yml@refs/tags/v*`, which is narrower than the repository-wide check this finding describes (disposition left to the workspace audit).
 
 ### F21 — Self-hosted registry mirror and registry credentials
 
@@ -459,15 +459,15 @@ view as a component, not a frame.
 
 ### B.VUE-2 Build inputs and artifacts / IMG
 
-`node:24-slim@sha256:0e0ff40c…` builder and `static-server:0.1.7@sha256:2e227311…` runtime, both
+`node:24-slim@sha256:0e0ff40c…` builder and `static-server:0.1.8@sha256:e32cf42b…4000` runtime (0.1.36 carried 0.1.7), both
 digest-pinned (Dependabot Docker group); `npm ci`; `.dockerignore` excludes local installs, build output,
 VCS data and every `.env*.local`; `npm run build && npm run licenses` run in the build stage; the runtime
 stage copies `dist` and the lockfile only; `USER 65534:65534`; no secret in any `ARG`/`ENV` (the build
 args are the public `VITE_*` values and the CSP); production sourcemaps are not emitted (Vite default); the
 deployment is read-only root, `runAsNonRoot` uid 65534, no privilege escalation, all capabilities dropped,
 `RuntimeDefault` seccomp, `automountServiceAccountToken: false`, readiness and liveness probes on `/`,
-requests 5m/16Mi and limits 100m/48Mi; digest `sha256:40219349…` in both `config/images.yaml` and the
-overlay; cosign signature verified 2026-10-09 (F20). Not run: a Trivy *config* scan of the Dockerfile and
+requests 5m/16Mi and limits 100m/48Mi; digest `sha256:712a7ee4…6299` (0.1.37; 0.1.36 was `sha256:40219349…`) in both `config/images.yaml` and the
+overlay; cosign signature verified 2026-10-09 (0.1.36) and 2026-10-18 (0.1.37) (F20). Not run: a Trivy *config* scan of the Dockerfile and
 manifests (F17).
 
 ### B.SC-1 ID-constant trace
@@ -520,7 +520,7 @@ the suite is hermetic. The suite runs in `node-ci.yml` and so in both release ga
 
 ### pre-testnet
 
-- [x] deployed with digest pinning; CSP and HSTS verified live 2026-10-09
+- [x] deployed with digest pinning; CSP and HSTS verified live 2026-10-09 and again on 0.1.37 on 2026-10-18 (`curl -I`: CSP, HSTS, `nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`)
 - [x] `SECURITY.md` present; F7–F10 fixed
 - [x] image: digest-pinned bases, non-root, restricted pod, probes and limits, deployed by digest, signed with SBOM and provenance, scanned before signing (F17)
 - [x] consumed IDs are the latest on-chain version — live bundle carries `0xd7ddaa94…` and `0x3f81489d…` only (B.SC-1)
@@ -630,3 +630,4 @@ the suite is hermetic. The suite runs in `node-ci.yml` and so in both release ga
   lint:js, lint:html, 49/49 tests, build, `check:licenses`, audit gate (1 allowlisted, 0 open). No Playwright
   suite exists. Counts: 21 findings — 16 RESOLVED (F1, F4–F17, F19), 1 Positive (F2), 1 ADJUDICATED (F3),
   2 ACCEPTED-RISK (F18, F20), 1 DEFERRED (F21, maintainer). Commit pending.
+- 2026-10-18 — released and deployed (`v0.1.37` = `1875326`, `0.1.37@sha256:712a7ee487f4ace04adb91233a72f3f29927e8ae84417eec7d4e886917876299`), verified live. Cosign keyless signature verified against the workflow-anchored identity (`verify-digests.sh` 16/16); published to npm and as an image; rollout (`apply.sh access-gate-ui`) succeeded; the page loads in headless Chromium with no console errors or CSP violations, headers present (re-read with `curl -I`), and the live bundle carries only the current ids. Mainnet-blocked, credential and external-review gates unchanged.
