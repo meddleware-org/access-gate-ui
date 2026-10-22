@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 [Semantic Versioning](https://semver.org/). Before 0.2.0, breaking changes ship as patch releases.
 Releases before 0.1.37 are recorded in the git history only.
 
+## [0.1.39] - 2026-10-22
+
+### Changed
+
+- Image base: static-server 0.1.11 (Go 1.26.10 standard library, CVE-2026-111943, so the scan-before-sign gate passes)
+
 ## [0.1.38] - 2026-10-20
 
 ### Changed
