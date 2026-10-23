@@ -21,9 +21,9 @@ const open = ref(false)
 function short(id: string): string {
   return id.length > 14 ? `${id.slice(0, 8)}…${id.slice(-4)}` : id
 }
-/** seal-ui, opened on this gate (the id is chain data, so it is encoded into the query). */
+/** sealed-storage-ui, opened on this gate (the id is chain data, so it is encoded into the query). */
 function sealUrl(gateId: string): string {
-  return `https://sui-seal.meddleware.co.uk/?gate=${encodeURIComponent(gateId)}`
+  return `https://sui-sealed-storage.meddleware.co.uk/?gate=${encodeURIComponent(gateId)}`
 }
 function priceLabel(mist: bigint): string {
   return mist === 0n ? 'Free' : `${mistToSui(mist)} SUI`

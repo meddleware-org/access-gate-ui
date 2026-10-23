@@ -231,8 +231,8 @@ dropped the tests from the image gate; the comment in `docker-publish.yml` ("typ
 build, licences") is wrong. TS lens: every test project that exists runs in CI.
 **Impact:** a regression in the pricing, image-URL, freeze or `executeTx` logic could merge and be
 released as an image without any gate failing; the npm job would still catch it for the library.
-**Remediation / evidence:** add `- run: npm test` to `node-ci.yml` (as the sibling apps walrus-ui,
-token-deployer-ui and ui do); verified by reading both workflows 2026-10-09 and running the suite locally
+**Remediation / evidence:** add `- run: npm test` to `node-ci.yml` (as the sibling apps walrus-storage-ui,
+token-issuance-ui and ui do); verified by reading both workflows 2026-10-09 and running the suite locally
 (27/27 pass, so adding the step turns nothing red).
 **Resolution:** `node-ci.yml` has an `npm test` step (`38b4d33`); `docker-publish.yml` and, since 0.1.37,
 `npm-publish.yml` call that workflow, so a tag runs the 49 tests (9 files) in both gates.
@@ -325,7 +325,7 @@ same tag.
 package is source only (`npm pack --dry-run` 2026-10-09: `src`, `index.html`, `vite.config.ts`,
 `tsconfig.json`, README, LICENSE; no tests, fixtures or `.env*`).
 **Remediation / evidence:** `npm-publish.yml` `verify` now calls `node-ci.yml` (`uses:
-./.github/workflows/node-ci.yml`), as `docker-publish.yml` does and as walrus-ui 0.1.58 did, so a tag
+./.github/workflows/node-ci.yml`), as `docker-publish.yml` does and as walrus-storage-ui 0.1.58 did, so a tag
 publishes the source package only if the full CI set passes. The package stays source only, OIDC-published
 with provenance, tag == version checked, idempotent, and gated on `NPM_PUBLISH`.
 

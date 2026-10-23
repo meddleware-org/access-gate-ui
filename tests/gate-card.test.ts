@@ -28,13 +28,13 @@ const sealLink = (gateId: string) =>
   }).find('a.seal-link').attributes('href')
 
 describe('GateCard seal link', () => {
-  it('opens seal-ui on this gate', () => {
+  it('opens sealed-storage-ui on this gate', () => {
     const id = '0x' + 'ab'.repeat(32)
-    expect(sealLink(id)).toBe(`https://sui-seal.meddleware.co.uk/?gate=${id}`)
+    expect(sealLink(id)).toBe(`https://sui-sealed-storage.meddleware.co.uk/?gate=${id}`)
   })
 
   it('encodes the gate id, so it cannot add query parameters or change the path', () => {
-    expect(sealLink('0x1&next=//evil#x')).toBe('https://sui-seal.meddleware.co.uk/?gate=0x1%26next%3D%2F%2Fevil%23x')
+    expect(sealLink('0x1&next=//evil#x')).toBe('https://sui-sealed-storage.meddleware.co.uk/?gate=0x1%26next%3D%2F%2Fevil%23x')
   })
 })
 

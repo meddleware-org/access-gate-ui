@@ -54,7 +54,7 @@ export function envFlag(value: string | undefined, fallback = false): boolean {
  * - `VITE_GATE_PAUSE_BLOCKS_DECRYPTION` — Seal content gated by the gate is undecryptable while
  *   the gate is paused.
  * - `VITE_GATE_PAUSE_BLOCKS_ACCESS` — while paused, passes cannot be used (`consume` aborts and
- *   nft-gate gateways, e.g. the Walrus relay, deny holders). Independent of decryption.
+ *   access-gate gateways, e.g. the Walrus relay, deny holders). Independent of decryption.
  *
  */
 export const GATE_POLICY: GatePolicy = {
