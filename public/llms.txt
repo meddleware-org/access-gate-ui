@@ -1,0 +1,16 @@
+# Access Gate
+
+> Create and manage NFT access passes (gates) on Sui: price, uses, soulbound or transferable, pause and freeze. Passes unlock gated services such as the Walrus upload relay or sealed content.
+
+Address: https://sui-access-gate.meddleware.co.uk
+
+## Documentation
+
+- [User guide](https://docs.meddleware.co.uk/blockchain/sui/access-gate/)
+- [Reference](https://docs.meddleware.co.uk/blockchain/sui/access-gate/reference)
+- [Developer integration](https://dev.meddleware.co.uk/sui/access-gate/integration)
+- [Gateway (wire protocol)](https://dev.meddleware.co.uk/sui/access-gate/gateway)
+
+## SDK
+
+- [@meddleware/access-gate-client (npm)](https://www.npmjs.com/package/@meddleware/access-gate-client)

@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 [Semantic Versioning](https://semver.org/). Before 0.2.0, breaking changes ship as patch releases.
 Releases before 0.1.37 are recorded in the git history only.
 
+## [0.1.41] - 2026-10-24
+
+### Changed
+
+- Ships its own `robots.txt` (Content Signals `search=yes, ai-input=yes`) and `llms.txt` instead of static-server's defaults.
+
 ## [0.1.40] - 2026-10-24
 
 ### Fixed
