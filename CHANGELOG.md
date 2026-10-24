@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 [Semantic Versioning](https://semver.org/). Before 0.2.0, breaking changes ship as patch releases.
 Releases before 0.1.37 are recorded in the git history only.
 
+## [0.1.40] - 2026-10-24
+
+### Fixed
+
+- The "Add unlockable content" link opens `sui-sealed-storage.meddleware.co.uk`; the old `sui-seal.` host was removed with the rename (ADR-0003).
+
 ## [0.1.39] - 2026-10-22
 
 ### Changed
