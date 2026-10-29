@@ -8,8 +8,8 @@ Address: https://sui-access-gate.meddleware.co.uk
 
 - [User guide](https://docs.meddleware.co.uk/blockchain/sui/access-gate/)
 - [Reference](https://docs.meddleware.co.uk/blockchain/sui/access-gate/reference)
-- [Developer integration](https://dev.meddleware.co.uk/sui/access-gate/integration)
-- [Gateway (wire protocol)](https://dev.meddleware.co.uk/sui/access-gate/gateway)
+- [Developer integration](https://meddleware.dev/sui/access-gate/integration)
+- [Gateway (wire protocol)](https://meddleware.dev/sui/access-gate/gateway)
 
 ## SDK
 

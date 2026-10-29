@@ -97,7 +97,7 @@ confirmation. Keep that guard.
 
 ## Deferred documentation — NOT for the `docs.` website (planned here per Part 0.4)
 
-> Captured for the future **`dev.meddleware.co.uk`** subdomain and white-label offering; excluded
+> Captured for the future **`meddleware.dev`** subdomain and white-label offering; excluded
 > from the user-facing `docs.` site (which explains the operator console in plain terms).
 
 ### `dev.` — developer integration (to write later)
