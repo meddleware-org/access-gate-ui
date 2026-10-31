@@ -2,13 +2,14 @@
 // Create a new access gate via @meddleware/access-gate-client under Meddleware's recorded deployment:
 // `create_gate` for a paid gate (at or above the minimum paid price) or `create_free_gate` (paying the
 // platform's free-gate fee), with the operator's immutable GatePolicy. Emits the tx digest.
-import { onMounted, ref } from 'vue'
-import { UiCard, UiButton, UiNotice, UiStepper, type StepperStep } from '@meddleware/ui'
+import { computed, onMounted, ref, useId } from 'vue'
+import { CopyableAddress, ExplorerLink, UiButton, UiCard, UiCheckField, UiNotice, UiStepper, UiTextField, type StepperStep } from '@meddleware/ui'
+import { mistToSui, suiExplorerUrl, suiToMist } from '@meddleware/web-utils'
 import { isRestrictivePolicy } from '@meddleware/access-gate-client'
 import { buildNewGateTx, errorMessage, executeTx, getPlatformConfig, minimumGatePriceMist } from '../gates.js'
 import { imageUrlError } from '../validation.js'
-import { GATE_ALLOW_FREE, GATE_POLICY, GATE_POLICY_ERROR } from '../config.js'
-import { gatePriceError, mistToSui, suiToMist } from '../pricing.js'
+import { GATE_ALLOW_FREE, GATE_POLICY, GATE_POLICY_ERROR, explorerNetwork } from '../config.js'
+import { gatePriceError } from '../gate-price.js'
 
 const props = defineProps<{
   /** Connected operator address; prefilled as the default payment recipient. */
@@ -16,7 +17,8 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ (e: 'created', digest: string): void }>()
 
-const priceSui = ref<string | number>('0')
+const id = useId()
+const priceSui = ref('0')
 const defaultUses = ref('0')
 const soulbound = ref(false)
 const autoBurnAtZero = ref(false)
@@ -40,6 +42,17 @@ const step = ref(0)
 const minPriceMist = ref<bigint | null>(null)
 const freeGateFeeMist = ref<bigint | null>(null)
 const restricted = isRestrictivePolicy(GATE_POLICY)
+
+/** What the price field tells the person: free gates, the free-gate fee, the minimum. */
+const priceHint = computed(() => {
+  const parts: string[] = []
+  if (GATE_ALLOW_FREE) {
+    const fee = freeGateFeeMist.value !== null && freeGateFeeMist.value > 0n ? ` (one-off fee of ${mistToSui(freeGateFeeMist.value)} SUI)` : ''
+    parts.push(`0 = free gate${fee}.`)
+  }
+  if (minPriceMist.value !== null && minPriceMist.value > 0n) parts.push(`Minimum ${mistToSui(minPriceMist.value)} SUI.`)
+  return parts.join(' ') || undefined
+})
 
 onMounted(async () => {
   try {
@@ -95,76 +108,26 @@ async function submit(): Promise<void> {
 
 <template>
   <UiCard title="Create a gate">
-    <UiStepper :steps="STEPS" v-model="step" />
+    <UiStepper v-model="step" :steps="STEPS" />
     <form class="form" @submit.prevent="submit">
+      <fieldset v-if="step === 0">
+        <legend>Economics</legend>
+        <UiTextField :id="`${id}-price`" v-model="priceSui" type="number" label="Price (SUI)" :hint="priceHint" min="0" step="0.000000001" inputmode="decimal" />
+        <UiTextField :id="`${id}-uses`" v-model="defaultUses" type="number" label="Default credits" hint="0 = unlimited pass; N = NFT granting N upload credits." min="0" step="1" />
+        <UiTextField :id="`${id}-recipient`" v-model="paymentRecipient" label="Payment recipient" hint="Where purchase revenue is sent (after the platform commission)." placeholder="0x…" spellcheck="false" />
+      </fieldset>
 
-      <!-- Step 0: Economics -->
-      <template v-if="step === 0">
-        <label class="field">
-          <span>Price (SUI)</span>
-          <input v-model="priceSui" type="number" min="0" step="0.000000001" inputmode="decimal" />
-          <small>
-            <template v-if="GATE_ALLOW_FREE">
-              0 = free gate<template v-if="freeGateFeeMist !== null && freeGateFeeMist > 0n">
-                (one-off fee of {{ mistToSui(freeGateFeeMist) }} SUI)</template>.
-            </template>
-            <template v-if="minPriceMist !== null && minPriceMist > 0n">
-              Minimum {{ mistToSui(minPriceMist) }} SUI.
-            </template>
-          </small>
-        </label>
+      <fieldset v-else-if="step === 1">
+        <legend>Appearance</legend>
+        <UiTextField :id="`${id}-name`" v-model="nftName" label="NFT name" placeholder="My access pass" />
+        <UiTextField :id="`${id}-image`" v-model="nftImageUrl" type="url" label="NFT image URL" placeholder="https://…" spellcheck="false" />
+        <UiTextField :id="`${id}-description`" v-model="nftDescription" label="NFT description" placeholder="Grants access to…" />
+      </fieldset>
 
-        <label class="field">
-          <span>Default credits</span>
-          <input v-model="defaultUses" type="number" min="0" step="1" />
-          <small>0 = unlimited pass; N = NFT granting N upload credits.</small>
-        </label>
-
-        <label class="field">
-          <span>Payment recipient</span>
-          <input v-model="paymentRecipient" type="text" placeholder="0x…" spellcheck="false" />
-          <small>Where purchase revenue is sent (after the platform commission).</small>
-        </label>
-
-        <div class="nav-row">
-          <UiButton type="button" @click="step++">Next</UiButton>
-        </div>
-      </template>
-
-      <!-- Step 1: Appearance -->
-      <template v-else-if="step === 1">
-        <label class="field">
-          <span>NFT name</span>
-          <input v-model="nftName" type="text" placeholder="My access pass" />
-        </label>
-
-        <label class="field">
-          <span>NFT image URL</span>
-          <input v-model="nftImageUrl" type="url" placeholder="https://…" spellcheck="false" />
-        </label>
-
-        <label class="field">
-          <span>NFT description</span>
-          <input v-model="nftDescription" type="text" placeholder="Grants access to…" />
-        </label>
-
-        <div class="nav-row">
-          <UiButton type="button" variant="secondary" @click="step--">Back</UiButton>
-          <UiButton type="button" @click="step++">Next</UiButton>
-        </div>
-      </template>
-
-      <!-- Step 2: Options + submit -->
-      <template v-else-if="step === 2">
-        <label class="check">
-          <input v-model="soulbound" type="checkbox" />
-          <span>Soulbound (non-transferable NFTs)</span>
-        </label>
-
-        <label class="check">
-          <input v-model="autoBurnAtZero" type="checkbox" />
-          <span>Auto-burn NFTs at zero credits</span>
-        </label>
+      <fieldset v-else>
+        <legend>Options</legend>
+        <UiCheckField v-model="soulbound" label="Soulbound (non-transferable NFTs)" />
+        <UiCheckField v-model="autoBurnAtZero" label="Auto-burn NFTs at zero credits" />
 
         <section v-if="restricted" class="policy" aria-labelledby="gate-policy-heading">
           <h4 id="gate-policy-heading">Permanent rules on this deployment</h4>
@@ -175,17 +138,21 @@ async function submit(): Promise<void> {
             <li v-if="GATE_POLICY.pauseBlocksAccess">Pausing the gate also stops passes from being used (e.g. relay uploads).</li>
           </ul>
         </section>
+      </fieldset>
 
-        <div class="nav-row">
-          <UiButton type="button" variant="secondary" @click="step--">Back</UiButton>
-          <UiButton type="submit" :disabled="submitting || GATE_POLICY_ERROR !== null">
-            {{ submitting ? 'Creating…' : 'Create gate' }}
-          </UiButton>
-        </div>
-      </template>
+      <p class="nav">
+        <UiButton v-if="step > 0" type="button" variant="secondary" @click="step--">Back</UiButton>
+        <UiButton v-if="step < 2" type="button" @click="step++">Next</UiButton>
+        <UiButton v-else type="submit" :busy="submitting" :disabled="GATE_POLICY_ERROR !== null">{{ submitting ? 'Creating…' : 'Create gate' }}</UiButton>
+      </p>
 
-      <UiNotice v-if="error" type="error">{{ error }}</UiNotice>
-      <UiNotice v-else-if="okDigest" type="ok">Gate created. Tx: {{ okDigest }}</UiNotice>
+      <UiNotice v-if="error" type="error" :message="error" />
+      <UiNotice v-else-if="okDigest" type="ok">
+        Gate created. Transaction
+        <CopyableAddress :address="okDigest" label="Copy transaction digest">
+          <ExplorerLink :href="suiExplorerUrl('txblock', okDigest, explorerNetwork)" :value="okDigest" />
+        </CopyableAddress>
+      </UiNotice>
     </form>
   </UiCard>
 </template>
@@ -194,51 +161,32 @@ async function submit(): Promise<void> {
 .form {
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
+  gap: var(--space-xs);
 }
-.field {
+
+fieldset {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-}
-.field > span {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text);
-}
-.field input {
-  padding: 0.5rem 0.6rem;
-  border: 1px solid var(--border);
-  border-radius: var(--mw-radius, 8px);
-  background: var(--surface);
-  color: var(--text);
-  font-size: 0.95rem;
-}
-.field small {
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-.policy h4 {
-  margin: 0 0 0.3rem;
-  font-size: 0.9rem;
-}
-.policy ul {
+  gap: var(--space-xs);
   margin: 0;
-  padding-left: 1.2rem;
+  padding: 0;
+  border: 0;
+}
+
+legend {
+  padding: 0;
+  font-weight: var(--font-weight-semibold);
+}
+
+.policy ul {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: var(--font-size-sm);
 }
-.check {
+
+.nav {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  color: var(--text);
-}
-.nav-row {
-  display: flex;
-  gap: 0.6rem;
+  gap: var(--space-xs);
   justify-content: flex-end;
-  margin-top: 0.4rem;
+  margin: 0;
 }
 </style>

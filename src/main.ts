@@ -1,6 +1,6 @@
 import '@meddleware/design-tokens/tokens.css'
 import '@meddleware/design-tokens/seasons.css'
-import '@meddleware/ui/base.css'
+import '@meddleware/ui/reset.css'
 import { createApp } from 'vue'
 import { useSeason } from '@meddleware/ui'
 import { useNetwork } from '@meddleware/wallet-adapter'
@@ -14,4 +14,9 @@ const built = env.VITE_NETWORK || 'testnet'
 if (built === 'testnet' || built === 'mainnet') useNetwork().setNetwork(built)
 
 useSeason()
-createApp(App).mount('#app')
+
+// End-to-end builds only: a mock wallet and a stub chain (`src/e2e.ts`). Both conditions are static, so no other build contains it.
+void (async () => {
+  if (import.meta.env.MODE === 'e2e' && import.meta.env.VITE_E2E === '1') (await import('./e2e.js')).installE2e()
+  createApp(App).mount('#app')
+})()

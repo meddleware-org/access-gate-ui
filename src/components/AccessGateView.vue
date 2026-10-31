@@ -7,7 +7,8 @@
 // Gate loading is driven by watching the connected account, so it works whether the connection
 // is made from this app's own header (standalone) or the dashboard's shared control (embedded).
 import { ref, watch } from 'vue'
-import { AppTabNav, UiNotice, UiTabPanel, UiToolIntro, type AppTab } from '@meddleware/ui'
+import { AppTabNav, UiLiveStatus, UiNotice, UiTabPanel, UiToolIntro, type AppTab } from '@meddleware/ui'
+import { createGeneration } from '@meddleware/web-utils'
 import { WalletGuard } from '@meddleware/wallet-adapter'
 import type { OwnedGate } from '@meddleware/access-gate-client'
 import { deployed, GATE_POLICY_ERROR, network } from '../config.js'
@@ -33,32 +34,33 @@ const gates = ref<OwnedGate[]>([])
 const loadingGates = ref(false)
 const loadError = ref<string | null>(null)
 
-let loadGeneration = 0
+// A slower, older load never overwrites a newer one.
+const generation = createGeneration()
 
 async function reloadGates(): Promise<void> {
-  const mine = ++loadGeneration
+  const current = generation.begin()
   if (!account.value || !deployed.value) return
   loadingGates.value = true
   loadError.value = null
   try {
     const list = await listMyGates(account.value.address)
-    if (mine === loadGeneration) gates.value = list
+    if (current()) gates.value = list
   } catch (e) {
-    if (mine === loadGeneration) loadError.value = errorMessage(e)
+    if (current()) loadError.value = errorMessage(e)
   } finally {
-    if (mine === loadGeneration) loadingGates.value = false
+    if (current()) loadingGates.value = false
   }
 }
 
 // Load (and clear) gates as the shared wallet connects/disconnects or the network changes —
-// independent of where the action originates. A slower, older load never overwrites a newer one.
+// independent of where the action originates.
 watch(
   [() => account.value?.address ?? null, network],
   ([addr]) => {
     gates.value = []
     loadError.value = null
     if (addr) void reloadGates()
-    else loadGeneration++
+    else generation.invalidate()
   },
   { immediate: true },
 )
@@ -70,40 +72,29 @@ function onCreated(): void {
 </script>
 
 <template>
-  <UiToolIntro>Create and manage on-chain access gates on Sui ({{ network }}).</UiToolIntro>
+  <section aria-labelledby="access-gate-title">
+    <h2 id="access-gate-title">Access Gate</h2>
+    <UiToolIntro>Create and manage on-chain access gates on Sui ({{ network }}).</UiToolIntro>
 
-  <UiNotice v-if="GATE_POLICY_ERROR" type="error">{{ GATE_POLICY_ERROR }}</UiNotice>
+    <UiNotice v-if="GATE_POLICY_ERROR" type="error" :message="GATE_POLICY_ERROR" />
 
-  <UiNotice v-if="!deployed" type="error">
-    The access_gate contract is not deployed on {{ network }}. Switch to a supported network.
-  </UiNotice>
+    <UiNotice v-if="!deployed" type="error" :message="`The access_gate contract is not deployed on ${network}. Switch to a supported network.`" />
 
-  <!-- The tab list and its panel always render (every tab controls a live panel); the wallet
-       prompt replaces only the panel's content until a wallet is connected. -->
-  <template v-else>
-    <AppTabNav
-      :tabs="TABS"
-      :model-value="activeTab"
-      id-prefix="access-gate"
-      aria-label="Sections"
-      class="access-gate__tabs"
-      @update:model-value="onTabChange"
-    />
+    <!-- The tab list and its panel always render (every tab controls a live panel); the wallet
+         prompt replaces only the panel's content until a wallet is connected. -->
+    <template v-else>
+      <AppTabNav :tabs="TABS" :model-value="activeTab" id-prefix="access-gate" aria-label="Sections" @update:model-value="onTabChange" />
 
-    <UiTabPanel id-prefix="access-gate" :tab="activeTab">
-      <WalletGuard message="Connect a Sui wallet to create and manage your access gates.">
-        <template v-if="activeTab === 'gates'">
-          <UiNotice v-if="loadError" type="error">{{ loadError }}</UiNotice>
-          <GateList :gates="gates" :loading="loadingGates" @changed="reloadGates" />
-        </template>
-        <CreateGateForm v-else-if="account" :address="account.address" @created="onCreated" />
-      </WalletGuard>
-    </UiTabPanel>
-  </template>
+      <UiTabPanel id-prefix="access-gate" :tab="activeTab">
+        <WalletGuard message="Connect a Sui wallet to create and manage your access gates." :required-features="['sui:signTransaction']">
+          <template v-if="activeTab === 'gates'">
+            <UiNotice v-if="loadError" type="error" :message="loadError" />
+            <UiLiveStatus label="Your gates" :message="loadingGates ? 'Loading your gates…' : ''" />
+            <GateList :gates="gates" :loading="loadingGates" @changed="reloadGates" />
+          </template>
+          <CreateGateForm v-else-if="account" :address="account.address" @created="onCreated" />
+        </WalletGuard>
+      </UiTabPanel>
+    </template>
+  </section>
 </template>
-
-<style scoped>
-.access-gate__tabs {
-  margin: 0 0 1rem;
-}
-</style>

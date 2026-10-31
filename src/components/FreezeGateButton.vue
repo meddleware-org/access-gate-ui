@@ -1,9 +1,9 @@
 <script setup lang="ts">
 // Irreversible: make the gate immutable (consumes the AdminCap, permanently ending all setters
-// and airdrop). Guarded behind a typed confirmation. A gate whose policy forbids freezing while
-// paused shows why instead of offering a transaction that would abort.
-import { computed, ref } from 'vue'
-import { UiButton, UiNotice } from '@meddleware/ui'
+// and airdrop). Guarded behind a typed confirmation in a dialog. A gate whose policy forbids freezing
+// while paused shows why instead of offering a transaction that would abort.
+import { computed, ref, useId } from 'vue'
+import { UiButton, UiDialog, UiNotice, UiTextField } from '@meddleware/ui'
 import { buildMakeGateImmutableTx } from '@meddleware/access-gate-client'
 import type { OwnedGate } from '@meddleware/access-gate-client'
 import { adminContext, errorMessage, executeTx } from '../gates.js'
@@ -14,6 +14,7 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ (e: 'changed'): void }>()
 
+const id = useId()
 const confirming = ref(false)
 const confirmText = ref('')
 const busy = ref(false)
@@ -34,7 +35,6 @@ async function freeze(): Promise<void> {
   } finally {
     busy.value = false
     confirming.value = false
-    confirmText.value = ''
   }
 }
 </script>
@@ -42,35 +42,23 @@ async function freeze(): Promise<void> {
 <template>
   <div class="freeze">
     <UiNotice v-if="blockedByPause" type="info">
-      This gate can't be frozen while paused (its policy keeps frozen gates purchasable). Unpause it
-      first.
+      This gate can't be frozen while paused (its policy keeps frozen gates purchasable). Unpause it first.
     </UiNotice>
-    <template v-else-if="!confirming">
-      <UiButton variant="danger" @click="confirming = true">Freeze gate (irreversible)</UiButton>
-    </template>
-    <template v-else>
-      <UiNotice type="error">
-        Freezing is <strong>permanent</strong>: it destroys the AdminCap and ends all settings and
-        airdrops for this gate. Purchases and consumption continue.
-        <template v-if="gate.policy?.lockCommissionOnFreeze">
-          The current platform commission terms are locked in for all future purchases.
-        </template>
-        Type <code>FREEZE</code> to confirm.
+    <UiButton v-else variant="danger" @click="confirming = true">Freeze gate (irreversible)</UiButton>
+    <UiNotice v-if="error" type="error" :message="error" />
+
+    <UiDialog v-model:open="confirming" title="Freeze this gate?" @close="confirmText = ''">
+      <UiNotice type="warning">
+        Freezing is <strong>permanent</strong>: it destroys the AdminCap and ends all settings and airdrops for this gate. Purchases and
+        consumption continue.
+        <template v-if="gate.policy?.lockCommissionOnFreeze">The current platform commission terms are locked in for all future purchases.</template>
       </UiNotice>
-      <div class="line">
-        <label class="field">
-          <span class="mw-visually-hidden">Type FREEZE to confirm</span>
-          <input v-model="confirmText" type="text" placeholder="FREEZE" spellcheck="false" />
-        </label>
-        <UiButton variant="danger" :disabled="busy || confirmText !== 'FREEZE'" @click="freeze">
-          {{ busy ? 'Freezing…' : 'Confirm freeze' }}
-        </UiButton>
-        <UiButton variant="ghost" :disabled="busy" @click="confirming = false; confirmText = ''">
-          Cancel
-        </UiButton>
-      </div>
-      <UiNotice v-if="error" type="error">{{ error }}</UiNotice>
-    </template>
+      <UiTextField :id="`${id}-confirm`" v-model="confirmText" label="Type FREEZE to confirm" placeholder="FREEZE" spellcheck="false" />
+      <template #actions="{ close }">
+        <UiButton variant="ghost" :disabled="busy" @click="close()">Cancel</UiButton>
+        <UiButton variant="danger" :busy="busy" :disabled="confirmText !== 'FREEZE'" @click="freeze">{{ busy ? 'Freezing…' : 'Confirm freeze' }}</UiButton>
+      </template>
+    </UiDialog>
   </div>
 </template>
 
@@ -78,20 +66,7 @@ async function freeze(): Promise<void> {
 .freeze {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-}
-.line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-}
-.line input {
-  padding: 0.4rem 0.55rem;
-  border: 1px solid var(--border);
-  border-radius: var(--mw-radius, 8px);
-  background: var(--surface);
-  color: var(--text);
-  font-size: 0.9rem;
+  align-items: start;
+  gap: var(--space-2xs);
 }
 </style>

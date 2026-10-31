@@ -1,17 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-
-// Stub the @meddleware/ui components (its prebuilt dist doesn't render under a second Vue runtime in
-// tests); keep the real safeHref, which is a plain function.
-vi.mock('@meddleware/ui', async () => {
-  const actual = await vi.importActual<typeof import('@meddleware/ui')>('@meddleware/ui')
-  return {
-    safeHref: actual.safeHref,
-    UiCard: { name: 'UiCard', template: '<div><slot /></div>' },
-    UiButton: { name: 'UiButton', props: ['variant'], emits: ['click'], template: '<button @click="$emit(\'click\')"><slot /></button>' },
-    UiNotice: { name: 'UiNotice', props: ['type'], template: '<div><slot /></div>' },
-  }
-})
 
 import GateCard from '../src/components/GateCard.vue'
 
@@ -43,7 +31,7 @@ describe('GateCard price', () => {
     mount(GateCard, {
       props: { gate: gate('0x1', priceMist) },
       global: { stubs: { GateSettingsPanel: true, AirdropForm: true, FreezeGateButton: true } },
-    }).find('.badge').text()
+    }).find('.mw-badge').text()
 
   it('shows the exact price, without exponent forms or float rounding', () => {
     expect(badge(0n)).toBe('Free')

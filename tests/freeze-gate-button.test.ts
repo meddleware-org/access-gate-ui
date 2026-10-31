@@ -1,18 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest'
+import { installDialogShim } from '@meddleware/frontend-config/vitest'
 import { mount, flushPromises } from '@vue/test-utils'
-
-// Stub @meddleware/ui (its prebuilt dist doesn't render under a second Vue runtime in tests) with
-// minimal components that forward the props we assert on: UiButton must forward `disabled` + click.
-vi.mock('@meddleware/ui', () => ({
-  // Re-emit the native click as the component's `click` event so the parent's `@click` fires.
-  UiButton: {
-    name: 'UiButton',
-    props: ['variant', 'disabled'],
-    emits: ['click'],
-    template: '<button :disabled="disabled" @click="$emit(\'click\', $event)"><slot /></button>',
-  },
-  UiNotice: { name: 'UiNotice', props: ['type'], template: '<div class="notice"><slot /></div>' },
-}))
 
 // The PTB builder + wallet executor are library/wallet seams — mock them so we assert wiring only.
 // vi.hoisted makes these available inside the hoisted vi.mock factories.
@@ -32,6 +20,10 @@ function findButton(w: ReturnType<typeof mount>, text: string) {
   return w.findAll('button').find((b) => b.text().includes(text))!
 }
 
+beforeAll(installDialogShim)
+
+const dialogOpen = (w: ReturnType<typeof mount>) => w.get('dialog').attributes('open') !== undefined
+
 beforeEach(() => {
   executeTx.mockClear()
   adminContext.mockClear()
@@ -39,11 +31,12 @@ beforeEach(() => {
 })
 
 describe('FreezeGateButton (fail-closed confirmation)', () => {
-  it('reveals the typed confirmation only after clicking Freeze', async () => {
+  it('opens the typed confirmation, in a dialog, only after clicking Freeze', async () => {
     const w = mount(FreezeGateButton, { props: { gate } })
-    expect(w.find('input').exists()).toBe(false)
+    expect(dialogOpen(w)).toBe(false)
     await findButton(w, 'Freeze gate').trigger('click')
-    expect(w.find('input').exists()).toBe(true)
+    expect(dialogOpen(w)).toBe(true)
+    expect(w.get('dialog').text()).toContain('Freezing is permanent')
   })
 
   it('keeps Confirm disabled until exactly FREEZE is typed', async () => {
@@ -60,8 +53,10 @@ describe('FreezeGateButton (fail-closed confirmation)', () => {
   it('Cancel resets the confirmation state', async () => {
     const w = mount(FreezeGateButton, { props: { gate } })
     await findButton(w, 'Freeze gate').trigger('click')
+    await w.get('input').setValue('FREE')
     await findButton(w, 'Cancel').trigger('click')
-    expect(w.find('input').exists()).toBe(false)
+    expect(dialogOpen(w)).toBe(false)
+    expect((w.get('input').element as HTMLInputElement).value).toBe('') // the typed word is gone
   })
 
   it('on confirm, builds the immutable PTB from the gate and emits changed', async () => {

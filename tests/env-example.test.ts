@@ -13,7 +13,9 @@ function sourceFiles(dir: string): string[] {
 
 const names = (text: string) => new Set([...text.matchAll(/VITE_[A-Z][A-Z0-9_]*[A-Z0-9](?![A-Z0-9_])/g)].map((m) => m[0]))
 
-const used = new Set(sourceFiles(join(root, 'src')).flatMap((f) => [...names(readFileSync(f, 'utf8'))]))
+// VITE_E2E is not a setting: it is the end-to-end build mode's own switch (guarded in vite.config.ts), so it is neither documented nor an arg.
+const BUILD_MODE_FLAGS = new Set(['VITE_E2E'])
+const used = new Set(sourceFiles(join(root, 'src')).flatMap((f) => [...names(readFileSync(f, 'utf8'))]).filter((n) => !BUILD_MODE_FLAGS.has(n)))
 
 describe('VITE_* inventory', () => {
   it('finds the variables the code reads', () => {

@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
+import { inlineMeddleware } from '@meddleware/frontend-config/vitest'
 
 // Component tests. The Vue plugin compiles SFCs for @vue/test-utils; jsdom is the DOM they mount
 // into. Covers the fail-closed FreezeGateButton confirmation flow. `dedupe` keeps @vue/test-utils
@@ -12,5 +13,7 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['tests/**/*.test.ts'],
     exclude: ['node_modules/**'],
+    // @meddleware/ui imports its own .css (each component brings its CSS), which Node cannot import: process it through Vite.
+    server: { deps: { inline: inlineMeddleware } },
   },
 })

@@ -1,19 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 
-// Stub @meddleware/ui (its prebuilt dist doesn't render under a second Vue runtime in tests).
-vi.mock('@meddleware/ui', () => ({
-  UiCard: { name: 'UiCard', template: '<div><slot /></div>' },
-  UiStepper: { name: 'UiStepper', props: ['steps', 'modelValue'], template: '<div />' },
-  UiButton: {
-    name: 'UiButton',
-    props: ['variant', 'disabled', 'type'],
-    emits: ['click'],
-    template: '<button :type="type || \'button\'" :disabled="disabled" @click="$emit(\'click\', $event)"><slot /></button>',
-  },
-  UiNotice: { name: 'UiNotice', props: ['type'], template: '<div class="notice"><slot /></div>' },
-}))
-
 // The configuration is mocked so the invalid-combination path can be exercised; the other seams
 // (platform read, tx build, wallet) are mocked to assert that nothing reaches the wallet.
 const { config, buildNewGateTx, executeTx, getPlatformConfig } = vi.hoisted(() => ({
@@ -22,7 +9,8 @@ const { config, buildNewGateTx, executeTx, getPlatformConfig } = vi.hoisted(() =
   executeTx: vi.fn(async () => '0xdigest'),
   getPlatformConfig: vi.fn(async () => ({ minCommissionMist: 1_000_000n, freeGateFeeMist: 0n })),
 }))
-vi.mock('../src/config.js', () => ({
+vi.mock('../src/config.js', async () => ({
+  explorerNetwork: (await import('vue')).ref('testnet'),
   GATE_ALLOW_FREE: true,
   GATE_POLICY: { freezeRequiresUnpaused: false, lockCommissionOnFreeze: false, pauseBlocksDecryption: false, pauseBlocksAccess: true },
   get GATE_POLICY_ERROR() {

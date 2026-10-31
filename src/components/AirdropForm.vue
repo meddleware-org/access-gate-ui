@@ -1,12 +1,13 @@
 <script setup lang="ts">
 // AdminCap-gated grant of the gate's NFT flavour to an address. Free for the recipient; the admin
 // pays the platform the commission a purchase at the current price would carry.
-import { onMounted, ref } from 'vue'
-import { UiButton, UiNotice } from '@meddleware/ui'
+import { onMounted, ref, useId } from 'vue'
+import { CopyableAddress, ExplorerLink, UiButton, UiNotice, UiTextField } from '@meddleware/ui'
+import { mistToSui, suiExplorerUrl } from '@meddleware/web-utils'
 import { gateCommissionMist } from '@meddleware/access-gate-client'
 import type { OwnedGate } from '@meddleware/access-gate-client'
+import { explorerNetwork } from '../config.js'
 import { buildGateAirdropTx, errorMessage, executeTx, getPlatformConfig } from '../gates.js'
-import { mistToSui } from '../pricing.js'
 
 const props = defineProps<{
   /** The gate whose NFT flavour is airdropped. */
@@ -14,6 +15,7 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ (e: 'changed'): void }>()
 
+const id = useId()
 const recipient = ref('')
 const busy = ref(false)
 const error = ref<string | null>(null)
@@ -48,58 +50,30 @@ async function airdrop(): Promise<void> {
 
 <template>
   <div class="airdrop">
-    <div class="line">
-      <label class="field">
-        <span>Airdrop access to</span>
-        <input v-model="recipient" type="text" placeholder="0x…" spellcheck="false" />
-      </label>
-      <UiButton variant="secondary" :disabled="busy || !recipient" @click="airdrop">
-        {{ busy ? 'Sending…' : 'Airdrop' }}
-      </UiButton>
-    </div>
-    <small v-if="commissionMist !== null && commissionMist > 0n" class="fee">
-      Each airdrop pays the platform commission of {{ mistToSui(commissionMist) }} SUI.
-    </small>
-    <UiNotice v-if="error" type="error">{{ error }}</UiNotice>
-    <UiNotice v-else-if="okDigest" type="ok">Airdropped. Tx: {{ okDigest }}</UiNotice>
+    <UiTextField
+      :id="`${id}-recipient`"
+      v-model="recipient"
+      label="Airdrop access to"
+      placeholder="0x…"
+      spellcheck="false"
+      :hint="commissionMist !== null && commissionMist > 0n ? `Each airdrop pays the platform commission of ${mistToSui(commissionMist)} SUI.` : undefined"
+    />
+    <UiButton variant="secondary" :busy="busy" :disabled="!recipient" @click="airdrop">{{ busy ? 'Sending…' : 'Airdrop' }}</UiButton>
+    <UiNotice v-if="error" type="error" :message="error" />
+    <UiNotice v-else-if="okDigest" type="ok">
+      Airdropped. Transaction
+      <CopyableAddress :address="okDigest" label="Copy transaction digest">
+        <ExplorerLink :href="suiExplorerUrl('txblock', okDigest, explorerNetwork)" :value="okDigest" />
+      </CopyableAddress>
+    </UiNotice>
   </div>
 </template>
 
 <style scoped>
-.fee {
-  color: var(--muted);
-  font-size: 0.8rem;
-}
 .airdrop {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-}
-/* The input nests inside its label (implicit association); caption sits above it. */
-.field {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.field > span {
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-.line {
-  display: flex;
-  gap: 0.5rem;
-  align-items: flex-end;
-}
-.line input {
-  width: 100%;
-  min-width: 0;
-  padding: 0.4rem 0.55rem;
-  border: 1px solid var(--border);
-  border-radius: var(--mw-radius, 8px);
-  background: var(--surface);
-  color: var(--text);
-  font-size: 0.9rem;
+  align-items: start;
+  gap: var(--space-2xs);
 }
 </style>

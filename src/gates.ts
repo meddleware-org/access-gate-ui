@@ -2,6 +2,7 @@
 // @meddleware/access-gate-client. All transaction construction and on-chain reads live in the
 // library; this module supplies the network's client and the recorded deployment ids.
 import type { Transaction } from '@mysten/sui/transactions'
+import { errorMessage as messageOf } from '@meddleware/web-utils'
 import {
   abortMessage,
   buildAirdropTx,
@@ -91,7 +92,7 @@ export function errorMessage(e: unknown): string {
   } catch {
     abort = undefined
   }
-  return abort ?? (e instanceof Error ? e.message : String(e))
+  return abort ?? messageOf(e)
 }
 
 /**
@@ -112,7 +113,7 @@ export async function executeTx(tx: Transaction): Promise<string> {
     await executor.waitForTransaction(digest)
   } catch (e) {
     throw new Error(
-      `Transaction ${digest} was submitted but could not be confirmed (${e instanceof Error ? e.message : String(e)}). ` +
+      `Transaction ${digest} was submitted but could not be confirmed (${messageOf(e)}). ` +
         'Refresh before retrying.',
     )
   }

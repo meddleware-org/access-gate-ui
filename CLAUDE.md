@@ -54,13 +54,14 @@ the main Meddleware dashboard alongside the other tools.
 | --- | --- |
 | `src/config.ts` | `network` (wallet-adapter selector), `explorerNetwork`, `requireDeployment()` / `deployed` (ids from access-gate-client `deployments`), `GATE_POLICY`, `GATE_MIN_PRICE`, `GATE_ALLOW_FREE` (from env) |
 | `src/validation.ts` | `imageUrlError` — https or `data:image/` only |
-| `src/pricing.ts` | Pure price rules: exact `suiToMist`/`mistToSui`, `gatePriceError` |
-| `src/wallet.ts` | Shim over `@meddleware/wallet-adapter` for the selected network; re-exports `useWallet` / `getSuiClient` / `buildExecutor` / `Executor` |
+| `src/gate-price.ts` | The operator's price policy: `gatePriceError` (SUI/MIST conversion is `@meddleware/web-utils`) |
+| `src/wallet.ts` | `createToolWallet({ requiredFeatures: ['sui:signTransaction'] })` from `@meddleware/wallet-adapter`; `useWallet` / `getSuiClient` / `buildExecutor` / `Executor` |
 | `src/gates.ts` | Binds the network's deployment to access-gate-client: `listMyGates`, `refreshGate`, `adminContext`, `buildNewGateTx`, `executeTx`, `errorMessage`, `getPlatformConfig`, `minimumGatePriceMist`, `buildPriceChangeTx`, `buildGateAirdropTx` |
-| `src/App.vue` | Standalone shell only: `AppHeader` (+ wallet connect, `ColorModeControl`) + `<AccessGateView>` + `AppFooter` |
+| `src/App.vue` | Standalone shell only: `UiAppShell` with `AppHeader` (+ `WalletModal`, `ColorModeControl`), `<AccessGateView>` and `AppFooter` |
+| `src/e2e.ts` | End-to-end build only (`--mode e2e`): registers `@meddleware/wallet-adapter/testing`'s mock wallet and a stub chain holding the platform config and two gates; loaded from `main.ts` behind two static conditions, so no other build contains it |
 | `src/components/AccessGateView.vue` | Core tool UI (tabs, gate loading via an `account` watcher). Exported from `src/index.ts` for inline embedding. |
 | `src/index.ts` | Library entry — exports `AccessGateView` for the dashboard to render inline |
-| `src/components/*` | `CreateGateForm`, `GateList`, `GateCard`, `GateSettingsPanel`, `AirdropForm`, `FreezeGateButton` |
+| `src/components/*` | `CreateGateForm` (a fieldset per step), `GateList` (a `ul` of `GateCard` `li`s), `GateCard`, `GateSettingsPanel` (one row per setting, from a descriptor list), `AirdropForm`, `FreezeGateButton` (the typed confirmation is a `UiDialog`) |
 
 ## Dual app + library
 
@@ -79,11 +80,17 @@ This package is **both** a standalone SPA (`App.vue` + `main.ts`, `vite build`) 
    then `executeTx(tx)` signs/executes/awaits.
 3. On success the component emits `changed`; `App.vue` re-runs `listMyGates` to refresh state.
 
+## End-to-end build
+
+`npm run build:e2e` (`VITE_E2E=1 vite build --mode e2e`) is what `npm run test:e2e` serves: the mock wallet shows up in the wallet dialog like an
+extension, signs with canned values, and the stub chain returns two gates, so the connected screens (create, my gates, managing, the freeze
+dialog) are checked and photographed offline. `vite.config.ts` refuses `VITE_E2E` in any other mode.
+
 ## Freeze is irreversible
 
 `make_gate_immutable` consumes the `AdminCap` and permanently ends all settings + airdrops
 (purchases/consumption continue). `FreezeGateButton.vue` guards it behind a typed `FREEZE`
-confirmation. Keep that guard.
+confirmation in a dialog. Keep that guard.
 
 ## What NOT to do
 

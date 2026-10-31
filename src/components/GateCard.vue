@@ -1,142 +1,72 @@
 <script setup lang="ts">
 // One administered gate: summary of its on-chain state, expandable into the management surface
 // (settings, airdrop, freeze). A frozen gate shows a locked notice instead of controls.
-import { ref } from 'vue'
-import { UiCard, UiButton, UiNotice, safeHref } from '@meddleware/ui'
+import { CopyableAddress, ExplorerLink, UiBadge, UiCard, UiNotice } from '@meddleware/ui'
+import { mistToSui, safeHref, suiExplorerUrl } from '@meddleware/web-utils'
 import type { OwnedGate } from '@meddleware/access-gate-client'
+import { explorerNetwork } from '../config.js'
 import GateSettingsPanel from './GateSettingsPanel.vue'
 import AirdropForm from './AirdropForm.vue'
 import FreezeGateButton from './FreezeGateButton.vue'
-import { mistToSui } from '../pricing.js'
 
 defineProps<{
   /** The gate to display and manage. */
   gate: OwnedGate
 }>()
-const emit = defineEmits<{ (e: 'changed'): void }>()
+defineEmits<{ (e: 'changed'): void }>()
 
-const open = ref(false)
-
-/** Short 0x…tail form for object ids. */
-function short(id: string): string {
-  return id.length > 14 ? `${id.slice(0, 8)}…${id.slice(-4)}` : id
-}
 /** sealed-storage-ui, opened on this gate (the id is chain data, so it is encoded into the query). */
 function sealUrl(gateId: string): string {
   return `https://sui-sealed-storage.meddleware.co.uk/?gate=${encodeURIComponent(gateId)}`
 }
-function priceLabel(mist: bigint): string {
-  return mist === 0n ? 'Free' : `${mistToSui(mist)} SUI`
-}
+const priceLabel = (mist: bigint) => (mist === 0n ? 'Free' : `${mistToSui(mist)} SUI`)
 </script>
 
 <template>
-  <UiCard>
-    <div class="head">
-      <div>
-        <h3>{{ gate.nftName || 'Untitled gate' }}</h3>
-        <p class="id"><code>{{ short(gate.gateId) }}</code></p>
-      </div>
-      <div class="badges">
-        <span class="badge">{{ priceLabel(gate.priceMist) }}</span>
-        <span class="badge">{{ gate.defaultUses === 0n ? 'Unlimited' : `${gate.defaultUses} credits` }}</span>
-        <span v-if="gate.soulbound" class="badge">Soulbound</span>
-        <span v-if="gate.paused" class="badge badge--warn">Paused</span>
-        <span v-if="gate.frozen" class="badge badge--warn">Frozen</span>
-        <span v-if="gate.lockedCommission" class="badge">
-          Commission locked at {{ gate.lockedCommission.bps }} bps
-        </span>
-        <span v-if="gate.policy?.pauseBlocksDecryption" class="badge">Pause blocks unlocks</span>
-        <span v-if="gate.policy?.pauseBlocksAccess" class="badge">Pause blocks access</span>
-      </div>
-    </div>
+  <UiCard as="li" :level="3" :title="gate.nftName || 'Untitled gate'">
+    <p>
+      <CopyableAddress :address="gate.gateId" label="Copy gate ID">
+        <ExplorerLink :href="suiExplorerUrl('object', gate.gateId, explorerNetwork)" :value="gate.gateId" />
+      </CopyableAddress>
+    </p>
+    <ul class="badges" role="list">
+      <li><UiBadge :symbol="false">{{ priceLabel(gate.priceMist) }}</UiBadge></li>
+      <li><UiBadge :symbol="false">{{ gate.defaultUses === 0n ? 'Unlimited' : `${gate.defaultUses} credits` }}</UiBadge></li>
+      <li v-if="gate.soulbound"><UiBadge :symbol="false">Soulbound</UiBadge></li>
+      <li v-if="gate.paused"><UiBadge tone="warn">Paused</UiBadge></li>
+      <li v-if="gate.frozen"><UiBadge tone="warn">Frozen</UiBadge></li>
+      <li v-if="gate.lockedCommission"><UiBadge :symbol="false">Commission locked at {{ gate.lockedCommission.bps }} bps</UiBadge></li>
+      <li v-if="gate.policy?.pauseBlocksDecryption"><UiBadge :symbol="false">Pause blocks unlocks</UiBadge></li>
+      <li v-if="gate.policy?.pauseBlocksAccess"><UiBadge :symbol="false">Pause blocks access</UiBadge></li>
+    </ul>
 
-    <div class="actions">
-      <UiButton variant="ghost" @click="open = !open">{{ open ? 'Hide' : 'Manage' }}</UiButton>
-      <a
-        class="seal-link"
-        :href="safeHref(sealUrl(gate.gateId))"
-        target="_blank"
-        rel="noopener"
-        title="Seal-encrypt content that only this gate's pass-holders can unlock"
-      >🔒 Add unlockable content →</a>
-    </div>
+    <p>
+      <a class="seal-link" :href="safeHref(sealUrl(gate.gateId))" target="_blank" rel="noopener" title="Seal-encrypt content that only this gate's pass-holders can unlock"><span aria-hidden="true">🔒</span> Add unlockable content →</a>
+    </p>
 
-    <div v-if="open" class="manage">
+    <details class="manage">
+      <summary>Manage</summary>
       <UiNotice v-if="gate.frozen" type="info">
-        This gate is frozen. Its settings and airdrops are permanently disabled; purchases and
-        consumption continue.
+        This gate is frozen. Its settings and airdrops are permanently disabled; purchases and consumption continue.
       </UiNotice>
       <template v-else>
-        <GateSettingsPanel :gate="gate" @changed="emit('changed')" />
-        <hr />
-        <AirdropForm :gate="gate" @changed="emit('changed')" />
-        <hr />
-        <FreezeGateButton :gate="gate" @changed="emit('changed')" />
+        <GateSettingsPanel :gate="gate" @changed="$emit('changed')" />
+        <AirdropForm :gate="gate" @changed="$emit('changed')" />
+        <FreezeGateButton :gate="gate" @changed="$emit('changed')" />
       </template>
-    </div>
+    </details>
   </UiCard>
 </template>
 
 <style scoped>
-.head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-.head h3 {
-  margin: 0;
-  font-size: 1.1rem;
-  color: var(--text);
-}
-.id {
-  margin: 0.15rem 0 0;
-  color: var(--muted);
-  font-size: 0.8rem;
-}
 .badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: var(--space-3xs);
+  margin: 0 0 var(--space-xs);
 }
-.badge {
-  font-size: 0.75rem;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  color: var(--muted);
-}
-.badge--warn {
-  color: var(--warning-text);
-  border-color: currentColor;
-}
-.actions {
-  margin-top: 0.75rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-.seal-link {
-  color: var(--accent, #c0503f);
-  text-decoration: none;
-  font-size: 0.85rem;
-}
-.seal-link:hover {
-  text-decoration: underline;
-}
-.manage {
-  margin-top: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-.manage hr {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin: 0.25rem 0;
-  width: 100%;
+
+.manage > :not(summary) {
+  margin-top: var(--space-xs);
 }
 </style>
