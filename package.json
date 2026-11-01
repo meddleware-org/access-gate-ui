@@ -52,7 +52,7 @@
   "dependencies": {
     "@meddleware/access-gate-client": "^0.0.13",
     "@meddleware/design-tokens": "^0.1.12",
-    "@meddleware/ui": "^0.1.36",
+    "@meddleware/ui": "^0.1.37",
     "@meddleware/web-utils": "^0.0.1",
     "@mysten/sui": "^2.36.0",
     "@mysten/wallet-standard": "^0.21.34",

@@ -49,6 +49,8 @@ jobs:
 
       - name: Third-party licence notices
         run: npm run check:licenses && test -s dist/THIRD_PARTY_LICENSES
+        env:
+          VITE_NETWORK: testnet
 
       # Lighthouse runs on the production build; the browser tests then rebuild it in e2e mode (a mock wallet and a stub chain).
       - name: Lighthouse (accessibility 100, best practices, bundle budgets)
@@ -61,5 +63,3 @@ jobs:
         run: npm run test:e2e
         env:
           E2E_BROWSERS: all
-        env:
-          VITE_NETWORK: testnet
