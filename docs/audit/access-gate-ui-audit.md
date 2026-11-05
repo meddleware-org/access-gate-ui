@@ -3,7 +3,7 @@
 **Classification:** Internal security review
 **Project:** `repos/access-gate-ui` — `@meddleware/access-gate-ui`, Vue 3 operator console for the access_gate NFT primitive (standalone SPA + `AccessGateView` library, embedded in the dashboard)
 **Project type:** Vue app + UI library
-**Template:** AUDIT_TEMPLATE.md (2026-10-08) + AUDIT_TEMPLATE_SUI_CLIENT.md (2026-10-08) + AUDIT_TEMPLATE_TS.md (2026-10-08) + AUDIT_TEMPLATE_VUE.md (2026-10-08) + AUDIT_TEMPLATE_IMG.md (2026-10-08)
+**Template:** AUDIT_TEMPLATE.md (2026-11-01) + AUDIT_TEMPLATE_SUI_CLIENT.md (2026-10-08) + AUDIT_TEMPLATE_TS.md (2026-11-01) + AUDIT_TEMPLATE_VUE.md (2026-11-01) + AUDIT_TEMPLATE_IMG.md (2026-10-08) + AUDIT_TEMPLATE_A11Y.md (2026-11-01)
 **Sui SDK:** `@mysten/sui ^2.36.0` (installed 2.36.0, one copy per host; `npm ls` single version)   **Transport:** gRPC through wallet-adapter
 **Networks:** testnet (live); mainnet shows "not deployed" until `access_gate` has a mainnet deployment; localnet likewise
 **On-chain packages consumed:** `access_gate` through `@meddleware/access-gate-client/deployments` (0.0.9: testnet `0xd7ddaa94…88c9`, PlatformConfig `0x3f81489d…e7b5`; call targets `publishedAt`, types and events `originalId`; never configuration)
@@ -19,7 +19,7 @@
 **Deployed by:** `post-bootstrap/access-gate-ui/overlays/default`; digest from `config/images.yaml`
 **Build args:** `VITE_NETWORK`, the four `VITE_GATE_*` policy flags, `VITE_GATE_MIN_PRICE_MIST`, `VITE_GATE_ALLOW_FREE` and `CSP` — none secret, none a test switch
 **Deployment status:** npm v0.1.37 (2026-10-18); image `quay.io/meddleware-org/access-gate-ui` serving `sui-access-gate.meddleware.co.uk` at 0.1.37 (`sha256:712a7ee4…6299`; release tag `v0.1.37` = `1875326`; released, signature verified and deployed 2026-10-18, rollout succeeded; 0.1.36 `sha256:40219349…` was deployed 2026-10-09; live bundle carries only `access_gate` `0xd7ddaa94…` and PlatformConfig `0x3f81489d…`, checked 2026-10-18; live headers re-checked 2026-10-18); embedded in dashboard 0.1.85
-**Review date:** 2026-09-18 (first pass) · re-verified 2026-10-03 · re-verified 2026-10-09 · fixes 2026-10-18 (0.1.37, released and deployed) · image build 2026-10-20 (0.1.38); 0.1.42 re-verified 2026-10-30 (Point the developer-docs and indexer links at the machine zone (ADR-0005); current @meddleware packages); 0.1.43 re-verified 2026-10-30 (Dependency updates (minor and patch groups) and workflow action bumps); 0.1.44 re-verified 2026-10-31 (Tool wallet factory, ui fields and cards, accessibility gates)
+**Review date:** 2026-09-18 (first pass) · re-verified 2026-10-03 · re-verified 2026-10-09 · fixes 2026-10-18 (0.1.37, released and deployed) · image build 2026-10-20 (0.1.38); 0.1.42 released 2026-10-30 (Point the developer-docs and indexer links at the machine zone (ADR-0005); current @meddleware packages); 0.1.43 released 2026-10-30 (Dependency updates (minor and patch groups) and workflow action bumps); 0.1.44 released 2026-10-31 (Tool wallet factory, ui fields and cards, accessibility gates); frontend-wave delta review 2026-11-01 (real review of the 2026-10-19 → 2026-11-01 changes; see the delta section)
 **Reviewer:** Internal review
 **Severity ceiling:** Medium — the console signs AdminCap-gated gate transactions and pays commission and fees with the operator's wallet; it holds no keys and every rule is enforced on-chain.
 **Status:** re-verified 2026-10-09; F12–F15 and F19 fixed in 0.1.37 (2026-10-18; released and deployed 2026-10-18, signature verified, rollout succeeded)
@@ -65,6 +65,8 @@ Re-verified 2026-10-09 (0.1.36; 27 unit tests, type-check and all three linters 
   **F21** registry mirror and credential inventory (DEFERRED, maintainer).
 
 The severity ceiling stays Medium.
+
+**2026-11-01 update.** Between 0.1.37 and 0.1.44 the app was rebuilt on the shared wallet factory and ui components and gained an end-to-end build mode. The review found that nothing inspected the production artefact for that harness and that the published tarball carried the harness module; both are fixed in 0.1.45 (F22, F23). The price, freeze and sweep properties hold (F24–F26).
 
 ## Threat model / trust boundaries
 
@@ -353,6 +355,45 @@ tokens are long-lived and not yet inventoried.
 verifies signatures, so it would not run).
 **Remediation / evidence:** the mirror is listed as best-effort; the public job has no `continue-on-error`.
 The credential inventory (scope, holder, expiry, rotation) is the maintainer item.
+
+### Frontend wave delta review (2026-11-01) — 0.1.38 to 0.1.44 reviewed · 0.1.45 prepared
+
+Scope: the changes since the 2026-10-19 review: the wallet binding rebuilt on `createToolWallet`, the screens rebuilt from `@meddleware/ui` fields and cards (create, list, settings, freeze), the price helpers moved to `@meddleware/web-utils` (`pricing.ts` became `gate-price.ts`), the 11.6 MB legal copies deleted (the legal pages live only at `meddleware.co.uk/legal/`, D103), the end-to-end build mode (`src/e2e.ts`: a mock wallet and a stub chain with two gates), the image publish by digest (build once, mirror to the self-hosted registry, cosign-verified), Lighthouse CI and the five-browser sweep. The release tool's "re-verified" marks for these releases recorded no review; this section is the review. Read: `src/e2e.ts`, `src/main.ts`, `vite.config.ts`, `CreateGateForm.vue`, `GateSettingsPanel.vue`, `FreezeGateButton.vue`, `gate-price.ts`, the workflows (`node-ci.yml`, `docker-publish.yml`), the Dockerfile and the tests. Ran (with the locally packed `ui` 0.1.38, `design-tokens` 0.1.13, `web-utils` 0.0.2, `frontend-config` 0.0.2): the audit gate (0 not allowlisted; the two `extract-zip` advisories are allowlisted until 2027-01-31), `vue-tsc`, lint (stylelint, eslint, html-validate), `vitest` (9 files, 45 tests), the production build, `check:bundle` on that build (3 files, no e2e hooks), `npm pack --dry-run` (23 files, 55 KiB, no e2e file), and the browser suite on Chromium, Firefox, WebKit, a Pixel 7 and an iPhone 14 with the CI font (DejaVu Sans through fontconfig): **615 passed in 13.8 minutes**.
+
+### F22 — No production-artefact scan for the end-to-end harness
+**Severity:** Medium   **Disposition:** RESOLVED
+**Where:** `package.json` (no bundle check), `Dockerfile`, `.github/workflows/node-ci.yml`; `vite.config.ts` and `src/main.ts` held the only controls.
+**Issue:** the e2e build (`vite build --mode e2e`) registers a mock wallet and a stub chain. The controls were the entry's static condition (`MODE === 'e2e' && VITE_E2E === '1'`, in `src/main.ts`) and `assertE2eOnlyInE2eMode`, which throws when `VITE_E2E` is set in another mode. Neither inspected the built output, which base §B.2 *Test-only modes* and VUE §A *Test hooks* require; the only scan in the estate lived in token-issuance-ui.
+**Impact:** a later change to the entry file, a bundler upgrade that stops folding the static condition, or a mis-set mode in an image build would ship a mock wallet in a signing app and nothing but a reviewer would notice
+**Remediation / evidence:** the shared `check-prod-bundle` of `@meddleware/frontend-config` 0.0.2 runs after the production build in `node-ci.yml` (`npm run check:bundle`) and in the Dockerfile (`RUN npm run build && npm run check:bundle && npm run licenses`, so a leaked harness fails the image build); a CI step runs `VITE_E2E=1 vite build` in production mode and fails the job if it succeeds. Verified here with positive and negative controls: the production build is clean (3 files); `build:e2e` fails the scan on `__registerMockWallet`, `__unregisterMockWallet`, `__e2eAddress`, `__e2eWalletAddress`, `__e2eSignTransaction` and `__e2eSignPersonalMessage`; `VITE_E2E=1 vite build` exits 1. 0.1.45.
+
+### F23 — The published tarball carried the end-to-end modules
+**Severity:** Low   **Disposition:** RESOLVED
+**Where:** `package.json` `files` (`src`); the e2e entry is `src/e2e.ts`.
+**Issue:** the package ships `src/` as a library, and `src/e2e.ts` — the mock wallet installer and its data — were in it. Nothing imports them from the library entry, but they are test-only code in a published artefact (TS lens B.TS-1; base §B.2 test-only modes).
+**Impact:** consumers download test doubles they never load; no behavioural impact
+**Remediation / evidence:** `"!src/e2e*.ts"` in `files` (`npm pack --dry-run`: 23 files, 55 KiB, no e2e file); `node-ci.yml` asserts that no packed file path matches `e2e`.
+
+### F24 — Positive: the gate price is exact and re-checked against the live platform at submit
+**Severity:** Positive
+**Where:** `src/components/CreateGateForm.vue`, `src/gate-price.ts`
+**Evidence:** `CreateGateForm.submit` parses the price with `suiToMist` (digits, at most nine decimals; web-utils 0.0.2 also refuses a number with more than nine decimals instead of rounding it — web-utils F1), re-reads `PlatformConfig` from the chain, and refuses a paid price below the live minimum or a free gate when the deployment disallows it (`gatePriceError`); the NFT image URL is checked (`imageUrlError`) and the transaction is built by the domain client. Nothing about price or commission is decided in the page.
+
+### F25 — Positive: the irreversible freeze stays behind a typed confirmation, in a native dialog
+**Severity:** Positive
+**Where:** `src/components/FreezeGateButton.vue`
+**Evidence:** `FreezeGateButton.vue` opens a `UiDialog` and enables the action only for the typed word `FREEZE` (VUE-M5); the sweep's 'freeze confirmation' state covers it at AA and AAA in every look, at 200% text and by keyboard.
+
+### F26 — Positive: the shared sweep covers every screen and passes on five browsers with the CI font
+**Severity:** Positive
+**Where:** e2e/a11y.spec.ts (`defineA11ySuite`, AAA `gate`)
+**Evidence:** eight states — disconnected, the wallet dialog, the three create steps, My gates, a gate being managed and the freeze confirmation — each at AA and AAA (gating) in all ten theme × season looks, at 320 px, at 200% text, in forced colours, under reduced motion and by keyboard (focus visible and not hidden), on five browser projects: 615 tests passed with the CI font.
+
+### Delta notes (A11Y lens, `AUDIT_TEMPLATE_A11Y.md`)
+- **Support promise:** the shared browserslist (`@meddleware/frontend-config/browserslist-config`); build target through `viteTarget()`; compat lints on.
+- **Accessibility gates:** the shared sweep (axe AA and AAA `gate`; reflow at 320 px; 200% text; forced colours; reduced motion; keyboard incl. focus not obscured) over eight states, Lighthouse CI (accessibility 100, best practices ≥ 0.95) on the production build, five browser projects in CI.
+- **Known exceptions:** none disabled; the 44 px enhanced target size, link purpose, reading order and screen-reader announcements are reviewed from screenshots (`npm run shots`), not automated.
+- **Supply chain:** `.github/audit-gate.mjs` with two dated `extract-zip` allowlist entries (dev-only, via `@lhci/cli`, expiry 2027-01-31, D104; OPERATOR_TASKS.md) and the `basic-ftp`/`tmp`/`zod` overrides; Dependabot (npm, Actions, Docker); `@meddleware/frontend-config` is a dev dependency (its audit F5).
 
 ## Section A — Invariant verification matrix
 
@@ -644,3 +685,4 @@ the suite is hermetic. The suite runs in `node-ci.yml` and so in both release ga
 - 2026-10-20 — image build moved off QEMU in 0.1.38 (commit c06bbcd): the build stage is `FROM --platform=$BUILDPLATFORM` (its output is architecture-independent static files) and the runtime stage only `COPY`s into the multi-arch static-server image; `docker-publish.yml` has no `docker/setup-qemu-action` step, so no privileged binfmt step runs in the release. Proof with rootless podman: the 0.1.37 sources with only the Dockerfile change give the same SHA-256 for every served file, the lockfile and `THIRD_PARTY_LICENSES` as the published 0.1.37 image, for amd64 (the whole image) and for the former arm64 build (every file the build stage produces; the static-server binary comes from the base, which podman 4.9 resolves to the host architecture). Checks: `npm ci`, type-check, lint, unit tests, build, `check:licenses`, `check:csp`/audit gate. No finding changed.
 - 2026-10-22 (audit close-out) — release 0.1.39 (`v0.1.39` = `2f5e24e`; `Publish (npm)` and `Publish (Docker)` succeeded). Image base: static-server 0.1.11 (Go 1.26.10 standard library, CVE-2026-111943, so the scan-before-sign gate passes; static-server F13). No disposition change. Not re-run in this pass: the unit tests, the build and the audit gate (the tag's own CI and publish runs succeeded).
 - 2026-10-24 — ships its own `robots.txt` (Content Signals `search=yes, ai-input=yes`) and `llms.txt` instead of static-server defaults (workspace ADR-0005). No finding changed.
+- 2026-11-01 — frontend-wave delta review of 0.1.38 to 0.1.44. Read the e2e harness, the create, settings and freeze components, the price helpers, the workflows and the Dockerfile; ran the gates and the five-browser suite with the CI font (615 passed in 13.8 minutes). Found and fixed F22 (nothing inspected the production artefact for the e2e harness: the shared `check-prod-bundle` now runs in CI and the image build, and a production build with `VITE_E2E=1` is refused in CI) and F23 (the e2e module in the published tarball); F24–F26 recorded as Positive. The release tool's bare "re-verified" marks were reworded to "released". `**Template:**` dates reconciled to the 2026-11-01 registry (TS/VUE changes add rows; the VUE colour row moved to A11Y, applied in full here) with no disposition change.

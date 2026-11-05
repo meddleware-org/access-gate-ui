@@ -52,7 +52,7 @@ ENV VITE_NETWORK=${VITE_NETWORK} \
     VITE_GATE_MIN_PRICE_MIST=${VITE_GATE_MIN_PRICE_MIST} \
     VITE_GATE_ALLOW_FREE=${VITE_GATE_ALLOW_FREE}
 
-RUN npm run build && npm run licenses
+RUN npm run build && npm run check:bundle && npm run licenses
 
 # ── runtime stage ─────────────────────────────────────────────────────────────
 # static-server is a minimal Go binary image — no shell, no package manager.
