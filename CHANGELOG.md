@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 [Semantic Versioning](https://semver.org/). Before 0.2.0, breaking changes ship as patch releases.
 Releases before 0.1.37 are recorded in the git history only.
 
+## [Unreleased]
+
+### Changed
+
+- `CreateGateForm` reads the deployment's gate policy through computeds, so the template type-checks the same under every `vue-tsc` (3.3.14 treats a bare imported binding in a template as a possible ref).
+
 ## [0.1.45] - 2026-11-05
 
 ### Security

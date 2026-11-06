@@ -41,7 +41,11 @@ const step = ref(0)
 /** Minimum paid price and free-gate fee (MIST); `null` until read (or if they could not be). */
 const minPriceMist = ref<bigint | null>(null)
 const freeGateFeeMist = ref<bigint | null>(null)
-const restricted = isRestrictivePolicy(GATE_POLICY)
+// Read-only deployment constants, held as computeds so the template type-checks the same under every vue-tsc (it treats a bare imported
+// binding as a possible ref).
+const restricted = computed(() => isRestrictivePolicy(GATE_POLICY))
+const policy = computed(() => GATE_POLICY)
+const policyError = computed(() => GATE_POLICY_ERROR)
 
 /** What the price field tells the person: free gates, the free-gate fee, the minimum. */
 const priceHint = computed(() => {
@@ -132,10 +136,10 @@ async function submit(): Promise<void> {
         <section v-if="restricted" class="policy" aria-labelledby="gate-policy-heading">
           <h4 id="gate-policy-heading">Permanent rules on this deployment</h4>
           <ul>
-            <li v-if="GATE_POLICY.freezeRequiresUnpaused">The gate can't be frozen while paused.</li>
-            <li v-if="GATE_POLICY.lockCommissionOnFreeze">Freezing locks in the current platform commission.</li>
-            <li v-if="GATE_POLICY.pauseBlocksDecryption">Pausing the gate also stops Seal-protected content from being unlocked.</li>
-            <li v-if="GATE_POLICY.pauseBlocksAccess">Pausing the gate also stops passes from being used (e.g. relay uploads).</li>
+            <li v-if="policy.freezeRequiresUnpaused">The gate can't be frozen while paused.</li>
+            <li v-if="policy.lockCommissionOnFreeze">Freezing locks in the current platform commission.</li>
+            <li v-if="policy.pauseBlocksDecryption">Pausing the gate also stops Seal-protected content from being unlocked.</li>
+            <li v-if="policy.pauseBlocksAccess">Pausing the gate also stops passes from being used (e.g. relay uploads).</li>
           </ul>
         </section>
       </fieldset>
@@ -143,7 +147,7 @@ async function submit(): Promise<void> {
       <p class="nav">
         <UiButton v-if="step > 0" type="button" variant="secondary" @click="step--">Back</UiButton>
         <UiButton v-if="step < 2" type="button" @click="step++">Next</UiButton>
-        <UiButton v-else type="submit" :busy="submitting" :disabled="GATE_POLICY_ERROR !== null">{{ submitting ? 'Creating…' : 'Create gate' }}</UiButton>
+        <UiButton v-else type="submit" :busy="submitting" :disabled="policyError !== null">{{ submitting ? 'Creating…' : 'Create gate' }}</UiButton>
       </p>
 
       <UiNotice v-if="error" type="error" :message="error" />
