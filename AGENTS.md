@@ -2,7 +2,7 @@
 
 ## Package
 
-`@meddleware/access-gate-ui` — standalone Vue 3 operator console for on-chain access gates on Sui.
+`@meddleware/access-gate-ui` — standalone Vue 3 gate-owner console for on-chain access gates on Sui.
 Deployed at `sui-access-gate.meddleware.co.uk`.
 
 ## Key files

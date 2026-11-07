@@ -100,10 +100,12 @@ async function run(what: string, build: () => Transaction | Promise<Transaction>
 
 <template>
   <div class="settings">
-    <div v-for="f in fields" :key="f.key" class="row">
-      <UiTextField :id="`${id}-${f.key}`" v-model="values[f.key]" :label="f.label" :type="f.type ?? 'text'" :hint="f.hint" v-bind="f.attrs" />
-      <UiButton variant="secondary" :busy="busy === f.key" :disabled="busy !== null" @click="run(f.key, f.build)">Update</UiButton>
-    </div>
+    <ul class="rows" role="list">
+      <li v-for="f in fields" :key="f.key" class="row">
+        <UiTextField :id="`${id}-${f.key}`" v-model="values[f.key]" :label="f.label" :type="f.type ?? 'text'" :hint="f.hint" v-bind="f.attrs" />
+        <UiButton variant="secondary" :busy="busy === f.key" :disabled="busy !== null" @click="run(f.key, f.build)">Update</UiButton>
+      </li>
+    </ul>
 
     <p class="toggles">
       <UiButton variant="ghost" :busy="busy === 'paused'" :disabled="busy !== null" @click="run('paused', () => buildSetPausedTx(ctx(), !gate.paused))">
@@ -123,6 +125,15 @@ async function run(what: string, build: () => Transaction | Promise<Transaction>
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .row {

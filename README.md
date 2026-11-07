@@ -2,7 +2,7 @@
 
 [![License: 0BSD](https://img.shields.io/badge/license-0BSD-blue)](LICENSE)
 
-A standalone Vue 3 operator console for on-chain **access gates** on Sui. Any third party can
+A standalone Vue 3 console for on-chain **access gates** on Sui. Any third party can
 create a gate, sell NFT-gated access to a resource (an upload relay, an API, a website, a game),
 and manage it — all client-side, signing with their own wallet.
 

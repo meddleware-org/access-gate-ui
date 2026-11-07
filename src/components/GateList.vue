@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Renders the gates the connected operator administers. Pure presentation — the parent owns the
+// Renders the gates the connected wallet administers. Pure presentation — the parent owns the
 // data and passes it in; row-level changes bubble up via `changed` so the parent re-fetches.
 import { UiEmptyState } from '@meddleware/ui'
 import type { OwnedGate } from '@meddleware/access-gate-client'

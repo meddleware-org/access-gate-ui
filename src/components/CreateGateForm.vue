@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Create a new access gate via @meddleware/access-gate-client under Meddleware's recorded deployment:
 // `create_gate` for a paid gate (at or above the minimum paid price) or `create_free_gate` (paying the
-// platform's free-gate fee), with the operator's immutable GatePolicy. Emits the tx digest.
+// platform's free-gate fee), with the deployment's immutable GatePolicy. Emits the tx digest.
 import { computed, onMounted, ref, useId } from 'vue'
 import { CopyableAddress, ExplorerLink, UiButton, UiCard, UiCheckField, UiNotice, UiStepper, UiTextField, type StepperStep } from '@meddleware/ui'
 import { mistToSui, suiExplorerUrl, suiToMist } from '@meddleware/web-utils'
@@ -12,7 +12,7 @@ import { GATE_ALLOW_FREE, GATE_POLICY, GATE_POLICY_ERROR, explorerNetwork } from
 import { gatePriceError } from '../gate-price.js'
 
 const props = defineProps<{
-  /** Connected operator address; prefilled as the default payment recipient. */
+  /** Connected gate owner's address; prefilled as the default payment recipient. */
   address: string
 }>()
 const emit = defineEmits<{ (e: 'created', digest: string): void }>()

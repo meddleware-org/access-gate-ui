@@ -3,7 +3,7 @@
 ## Scope
 
 This policy covers security issues in the `@meddleware/access-gate-ui` application/library source
-(`src/**`) — the gate operator console, the `AccessGateView` library export, the commission-routing
+(`src/**`) — the gate-owner console, the `AccessGateView` library export, the commission-routing
 deployment binding, and the gate form components.
 
 It does not cover:

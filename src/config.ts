@@ -1,12 +1,11 @@
 // Configuration. The network is wallet-adapter's shared runtime selector — the one source for the
 // client, the access_gate ids and explorer links (the standalone build selects VITE_NETWORK in
 // main.ts). The access_gate ids come from @meddleware/access-gate-client/deployments and are not
-// configurable (commission enforcement). Operators configure only the gate-creation policy
+// configurable (commission enforcement). A deployment configures only the gate-creation policy
 // (restrictions + minimum price) through VITE_*.
 import { computed } from 'vue'
 import { validateGatePolicy, type GatePolicy } from '@meddleware/access-gate-client'
 import { accessGateDeployment, type AccessGateDeployment } from '@meddleware/access-gate-client/deployments'
-import type { SuiNetwork } from '@meddleware/ui'
 import { useNetwork } from '@meddleware/wallet-adapter'
 
 const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {}
@@ -14,8 +13,8 @@ const env = (import.meta as unknown as { env?: Record<string, string | undefined
 /** The active network (read-only ref). */
 export const network = useNetwork().network
 
-/** SuiVision has no localnet; nothing is deployed there, so testnet links are inert. */
-export const explorerNetwork = computed<SuiNetwork>(() => (network.value === 'mainnet' ? 'mainnet' : 'testnet'))
+/** The network explorer links point at (wallet-adapter's: SuiVision has no localnet, so testnet links are inert there). */
+export const explorerNetwork = useNetwork().explorerNetwork
 
 /**
  * Meddleware's access_gate deployment on the active network. Every gate created here is created
@@ -46,7 +45,7 @@ export function envFlag(value: string | undefined, fallback = false): boolean {
 
 /**
  * Immutable restrictions applied to every gate this tool creates (`GatePolicy` on-chain). All
- * default to `false` (unrestricted); an operator re-using this tool can turn any of them on:
+ * default to `false` (unrestricted); a deployment of this tool can turn any of them on:
  *
  * - `VITE_GATE_FREEZE_REQUIRES_UNPAUSED` — a paused gate cannot be frozen (so a frozen gate can
  *   never be stuck unpurchasable).
@@ -65,21 +64,31 @@ export const GATE_POLICY: GatePolicy = {
 }
 
 /**
- * Why a gate policy cannot be created, or `null` when it can. The contract rejects a policy whose
- * pause blocks decryption or access unless freezing also requires the gate to be unpaused
- * (`E_POLICY_COMBINATION`, code 15); the check is the client's, so the console and
- * `buildCreateGateTx` agree.
+ * Why a gate policy cannot be used, for the developer: the rule it breaks, or `null` when it can be
+ * used. The contract rejects a policy whose pause blocks decryption or access unless freezing also
+ * requires the gate to be unpaused (`E_POLICY_COMBINATION`, code 15); the check is the client's,
+ * so this tool and `buildCreateGateTx` agree.
  */
-export function gatePolicyError(policy: GatePolicy): string | null {
+export function gatePolicyCause(policy: GatePolicy): string | null {
   const violation = validateGatePolicy(policy)
-  return violation ? `Invalid gate configuration (${violation.name}): ${violation.message}` : null
+  return violation ? `${violation.name}: ${violation.message}` : null
 }
 
 /**
- * Set when the operator's `VITE_GATE_*` flags form a combination that aborts every create. The
- * console shows it as a configuration error and refuses to build a create transaction.
+ * What a person is told when a policy cannot be used: nothing they can change, so no variable
+ * names (those go to the console, see {@link gatePolicyCause}).
+ */
+export function gatePolicyError(policy: GatePolicy): string | null {
+  return gatePolicyCause(policy) === null ? null : 'Creating gates is unavailable here right now: this site is set up with rules the contract would refuse. Try again later.'
+}
+
+/**
+ * Set when the build's `VITE_GATE_*` flags form a combination that aborts every create. The tool
+ * shows it as an error and refuses to build a create transaction; the cause is logged for the developer.
  */
 export const GATE_POLICY_ERROR: string | null = gatePolicyError(GATE_POLICY)
+const cause = gatePolicyCause(GATE_POLICY)
+if (cause) console.error(`access-gate-ui: invalid VITE_GATE_* policy (${cause})`)
 
 /** Minimum paid gate price: the on-chain minimum, or a higher fixed MIST floor. */
 export type MinPriceSetting = { kind: 'auto' } | { kind: 'fixed'; mist: bigint }

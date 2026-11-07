@@ -78,7 +78,7 @@ function onCreated(): void {
 
     <UiNotice v-if="GATE_POLICY_ERROR" type="error" :message="GATE_POLICY_ERROR" />
 
-    <UiNotice v-if="!deployed" type="error" :message="`The access_gate contract is not deployed on ${network}. Switch to a supported network.`" />
+    <UiNotice v-if="!deployed" type="error" :message="`Access Gate is not available on ${network}. Switch to a network where it is.`" />
 
     <!-- The tab list and its panel always render (every tab controls a live panel); the wallet
          prompt replaces only the panel's content until a wallet is connected. -->

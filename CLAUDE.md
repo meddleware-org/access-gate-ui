@@ -2,7 +2,7 @@
 
 ## What this app is
 
-A standalone Vue 3 SPA operator console for the `access_gate` primitive: create gates, list the
+A standalone Vue 3 SPA gate-owner console for the `access_gate` primitive: create gates, list the
 gates the connected wallet administers, and run every AdminCap-gated action (settings, pause,
 airdrop, freeze). It is a **Sui tool**, deliberately unrelated to Walrus — later it folds into
 the main Meddleware dashboard alongside the other tools.
@@ -37,7 +37,7 @@ the main Meddleware dashboard alongside the other tools.
   that when `AccessGateView` is embedded in the dashboard alongside other tool views, they all
   share one connection. Do not reintroduce a local wallet-standard implementation or a specific
   wallet adapter.
-- **Operator-configurable env: network + gate-creation policy.** `VITE_NETWORK`, the `GatePolicy`
+- **Deployment-configurable env: network + gate-creation policy.** `VITE_NETWORK`, the `GatePolicy`
   flags (`VITE_GATE_FREEZE_REQUIRES_UNPAUSED`,
   `VITE_GATE_LOCK_COMMISSION_ON_FREEZE`, `VITE_GATE_PAUSE_BLOCKS_DECRYPTION`,
   `VITE_GATE_PAUSE_BLOCKS_ACCESS`; default false) and the price floor (`VITE_GATE_MIN_PRICE_MIST` =
@@ -52,16 +52,16 @@ the main Meddleware dashboard alongside the other tools.
 
 | File | Responsibility |
 | --- | --- |
-| `src/config.ts` | `network` (wallet-adapter selector), `explorerNetwork`, `requireDeployment()` / `deployed` (ids from access-gate-client `deployments`), `GATE_POLICY`, `GATE_MIN_PRICE`, `GATE_ALLOW_FREE` (from env) |
+| `src/config.ts` | `network` and `explorerNetwork` (both wallet-adapter's `useNetwork()`), `requireDeployment()` / `deployed` (ids from access-gate-client `deployments`), `GATE_POLICY`, `GATE_MIN_PRICE`, `GATE_ALLOW_FREE` (from env) |
 | `src/validation.ts` | `imageUrlError` — https or `data:image/` only |
-| `src/gate-price.ts` | The operator's price policy: `gatePriceError` (SUI/MIST conversion is `@meddleware/web-utils`) |
+| `src/gate-price.ts` | The gate-price policy: `gatePriceError` (SUI/MIST conversion is `@meddleware/web-utils`) |
 | `src/wallet.ts` | `createToolWallet({ requiredFeatures: ['sui:signTransaction'] })` from `@meddleware/wallet-adapter`; `useWallet` / `getSuiClient` / `buildExecutor` / `Executor` |
 | `src/gates.ts` | Binds the network's deployment to access-gate-client: `listMyGates`, `refreshGate`, `adminContext`, `buildNewGateTx`, `executeTx`, `errorMessage`, `getPlatformConfig`, `minimumGatePriceMist`, `buildPriceChangeTx`, `buildGateAirdropTx` |
-| `src/App.vue` | Standalone shell only: `UiAppShell` with `AppHeader` (+ `WalletModal`, `ColorModeControl`), `<AccessGateView>` and `AppFooter` |
+| `src/App.vue` | Standalone shell only: `AppToolShell` (title, docs/dev links) with the wallet button or address in its `actions` slot, around `<AccessGateView>` |
 | `src/e2e.ts` | End-to-end build only (`--mode e2e`): registers `@meddleware/wallet-adapter/testing`'s mock wallet and a stub chain holding the platform config and two gates; loaded from `main.ts` behind two static conditions, so no other build contains it |
 | `src/components/AccessGateView.vue` | Core tool UI (tabs, gate loading via an `account` watcher). Exported from `src/index.ts` for inline embedding. |
 | `src/index.ts` | Library entry — exports `AccessGateView` for the dashboard to render inline |
-| `src/components/*` | `CreateGateForm` (a fieldset per step), `GateList` (a `ul` of `GateCard` `li`s), `GateCard`, `GateSettingsPanel` (one row per setting, from a descriptor list), `AirdropForm`, `FreezeGateButton` (the typed confirmation is a `UiDialog`) |
+| `src/components/*` | `CreateGateForm` (a fieldset per step), `GateList` (a `ul` of `GateCard` `li`s), `GateCard`, `GateSettingsPanel` (a `ul`, one `li` per setting, from a descriptor list), `AirdropForm`, `FreezeGateButton` (the typed confirmation is a `UiDialog`) |
 
 ## Dual app + library
 
@@ -84,7 +84,11 @@ This package is **both** a standalone SPA (`App.vue` + `main.ts`, `vite build`) 
 
 `npm run build:e2e` (`VITE_E2E=1 vite build --mode e2e`) is what `npm run test:e2e` serves: the mock wallet shows up in the wallet dialog like an
 extension, signs with canned values, and the stub chain returns two gates, so the connected screens (create, my gates, managing, the freeze
-dialog) are checked and photographed offline. `vite.config.ts` refuses `VITE_E2E` in any other mode.
+dialog) are checked and photographed offline. `vite.config.ts` (`meddlewareApp`) refuses `VITE_E2E` in any other mode.
+
+## Shared tooling
+
+`@meddleware/frontend-config` supplies the Vite and Vitest configuration (`meddlewareApp`, `vueTestConfig`), the tsconfig base, and the `mw-*` bins: `mw-audit-gate`, `mw-third-party-licenses`, `mw-check-csp-inline` (`npm run check:csp`, also in the Dockerfile) and `mw-sync` (`npx mw-sync --check` in CI keeps dependabot.yml, .dockerignore, the postcss/stylelint configs, the audit allowlist and the Dockerfile CSP equal to the `chain` profile; `--write` repairs them). The `"meddleware"` key in package.json declares the kind, CSP profile and Lighthouse use.
 
 ## Freeze is irreversible
 
@@ -98,14 +102,14 @@ confirmation in a dialog. Keep that guard.
 - Do not make the access_gate package ID configurable (breaks commission enforcement).
 - Do not add accounting/price-derivation logic — on-chain is the source of truth.
 - Do not expose the platform (Meddleware-only) setters `set_platform_treasury` /
-  `set_commission_bps` in this operator app.
+  `set_commission_bps` in this gate-owner app.
 
 ---
 
 ## Deferred documentation — NOT for the `docs.` website (planned here per Part 0.4)
 
 > Captured for the future **`meddleware.dev`** subdomain and white-label offering; excluded
-> from the user-facing `docs.` site (which explains the operator console in plain terms).
+> from the user-facing `docs.` site (which explains the gate-owner console in plain terms).
 
 ### `dev.` — developer integration (to write later)
 
@@ -113,9 +117,9 @@ confirmation in a dialog. Keep that guard.
   shared `@meddleware/wallet-adapter`; the dual app+library contract and the `account`-watcher data
   flow. SDK-level builders/reads are documented in `@meddleware/access-gate-client`.
 
-### White-label operator path (to write later)
+### White-label path (to write later)
 
-- Operators running the console for **their own gates** under the shared platform: what is
-  operator-controlled (gate config, airdrops, freeze) vs fixed (the deployment ids from `deployments` +
+- Teams running the console for **their own gates** under the shared platform: what the gate owner
+  controls (gate config, airdrops, freeze) vs fixed (the deployment ids from `deployments` +
   commission routing to Meddleware — deliberately not configurable). Branding seams
   (`@meddleware/design-tokens`, `AppHeader`). Note the platform-only setters are intentionally hidden.

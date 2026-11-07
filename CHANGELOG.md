@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 [Semantic Versioning](https://semver.org/). Before 0.2.0, breaking changes ship as patch releases.
 Releases before 0.1.37 are recorded in the git history only.
 
+## [0.1.48] - 2026-11-07
+
+### Changed
+
+- The page title and description say "Access Gate" and "Meddleware" (they said "Access Gate Operator" and "MeddleWare" and called the page an operator console); the package description no longer says "operator".
+- Where gates are not available (a network without a recorded deployment) the notice says so in plain words instead of naming the `access_gate` contract; a build whose gate rules the contract would refuse tells a person that creating gates is unavailable, and writes the technical cause to the console only.
+- The settings of a gate are a list (one item per setting) instead of loose `div` rows.
+- The standalone page is the shared `AppToolShell` of `@meddleware/ui` ^0.1.40; the network comes from `selectBuiltNetwork` and `useNetwork().explorerNetwork` of `@meddleware/wallet-adapter` ^0.0.22, so the peer range is now `>=0.0.22 <0.2.0` (the dashboard needs `^0.0.22`). `AccessGateView` is exported unchanged.
+- Internal: Vite, Vitest and TypeScript configuration come from `@meddleware/frontend-config` ^0.0.7 (`meddlewareApp`, `vueTestConfig`, the `vue-app` tsconfig base); the audit gate and the licence notices run its `mw-audit-gate` and `mw-third-party-licenses` (the local copies are deleted); `mw-sync --check` and an inline-script check against the Content-Security-Policy (`check:csp`, also in the Dockerfile) run in CI; `@meddleware/web-utils` ^0.0.3.
+- Tests for the shell, the settings list, the plain-language configuration notice and the wording of every template.
+
 ## [0.1.47] - 2026-11-06
 
 ### Changed

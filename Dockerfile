@@ -53,6 +53,9 @@ ENV VITE_NETWORK=${VITE_NETWORK} \
     VITE_GATE_ALLOW_FREE=${VITE_GATE_ALLOW_FREE}
 
 RUN npm run build && npm run check:bundle && npm run licenses
+ARG CSP
+# The CSP has no 'unsafe-inline' for scripts: the build fails if dist/ ever carries an inline <script>.
+RUN npx mw-check-csp-inline "${CSP}" dist
 
 # ── runtime stage ─────────────────────────────────────────────────────────────
 # static-server is a minimal Go binary image — no shell, no package manager.

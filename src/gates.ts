@@ -31,7 +31,7 @@ export async function getPlatformConfig(): Promise<PlatformConfigInfo> {
 
 /**
  * The minimum paid gate price in MIST: the on-chain minimum (10 × the platform's minimum
- * commission), raised to `VITE_GATE_MIN_PRICE_MIST` if the operator set a higher fixed floor.
+ * commission), raised to `VITE_GATE_MIN_PRICE_MIST` if the deployment sets a higher fixed floor.
  */
 export function minimumGatePriceMist(platform: PlatformConfigInfo): bigint {
   const onChain = minimumPaidPriceMist(platform.minCommissionMist)
@@ -39,7 +39,7 @@ export function minimumGatePriceMist(platform: PlatformConfigInfo): bigint {
   return onChain
 }
 
-/** List every gate the given operator address administers (via their owned AdminCaps). */
+/** List every gate the given owner address administers (via their owned AdminCaps). */
 export async function listMyGates(owner: string): Promise<OwnedGate[]> {
   return fetchOwnedGates(getSuiClient(), owner, requireDeployment().originalId)
 }
