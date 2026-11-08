@@ -582,7 +582,7 @@ the suite is hermetic. The suite runs in `node-ci.yml` and so in both release ga
 - [x] CSP and HSTS on the one hosting path (B.VUE-1); typed confirmation for the irreversible freeze (F3)
 - [x] wallet change events and switch/disconnect handling — wallet-adapter 0.0.17 (own audit) and I8 here
 - [ ] registry credential inventory and rotation (F21) — `OPERATOR_TASKS.md` "Image registry credentials"
-- [ ] external review — maintainer item (`OPERATOR_TASKS.md` "Funding, grants and an external audit")
+- [ ] external review (ADR-0009 gate G4: not a launch gate; covered by redeploy and the audit pass) — maintainer item (`OPERATOR_TASKS.md` "Funding, grants and an external audit")
 
 ## Cross-project themes
 
