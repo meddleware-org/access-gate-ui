@@ -23,6 +23,13 @@ describe('App', () => {
     expect(w.find('footer').text()).toContain('Meddleware')
   })
 
+  it('shows the company mark beside the tool name in the header, as decoration', () => {
+    const mark = mount(App).find('header svg.mw-brand-mark')
+    expect(mark.exists()).toBe(true)
+    expect(mark.attributes('aria-hidden')).toBe('true')
+    expect(mark.find('path').attributes('fill')).toBe('currentColor')
+  })
+
   it('shows the connected address and a way to disconnect in the header', () => {
     account.value = { address: '0x' + 'ab'.repeat(32) }
     const w = mount(App)

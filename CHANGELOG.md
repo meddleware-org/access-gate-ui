@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 [Semantic Versioning](https://semver.org/). Before 0.2.0, breaking changes ship as patch releases.
 Releases before 0.1.37 are recorded in the git history only.
 
+## [0.1.49] - 2026-11-12
+
+### Changed
+
+- The header shows the company mark (the Kopimi "K") beside the tool name (`@meddleware/ui` 0.1.41 `AppToolShell`).
+- The favicon set (SVG, ICO, Apple touch icon, 192 and 512 icons, web manifest named "Access Gate") now comes from `@meddleware/frontend-config` 0.0.8 (`meddlewareApp({ name })`); the app's own `public/favicon.svg` and its icon link tag are removed.
+- Dependencies: `@meddleware/ui` ^0.1.41, `@meddleware/frontend-config` ^0.0.8, `@meddleware/web-utils` ^0.0.4.
+- CI and release workflows set `DO_NOT_TRACK=1`.
+
+### Added
+
+- Tests: the header shows the mark; sources and the production build name no third-party font, CDN or tracker, ship no font files and carry the brand icon set (run over `dist/` in CI after the build).
+
 ## [0.1.48] - 2026-11-07
 
 ### Changed
