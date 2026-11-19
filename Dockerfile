@@ -25,7 +25,7 @@ ARG CSP="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'
 
 # The build stage runs on the BUILD host's architecture: its output (static files) is architecture-independent,
 # so no arm64 step runs under emulation. The final stage only COPYs into the multi-arch static-server image.
-FROM --platform=$BUILDPLATFORM node:26-slim@sha256:0d1e33586362bb9e608c4e751e7a9e7edb55c9ac11461ed5666af696cc461dd4 AS build
+FROM --platform=$BUILDPLATFORM node:26-slim@sha256:e6bedef217677b276c591795e169840edd9096dbf13f29df8ef8d1856b8820bc AS build
 
 WORKDIR /app
 
@@ -61,7 +61,7 @@ RUN npx mw-check-csp-inline "${CSP}" dist
 # static-server is a minimal Go binary image — no shell, no package manager.
 # SPA_FALLBACK serves index.html for any extensionless path (Vue Router history mode).
 # CACHE_IMMUTABLE_PREFIX matches the /assets/ directory Vite emits with content hashes.
-FROM quay.io/meddleware-org/static-server:0.1.12@sha256:f2cdfac6c795ee8a442e144e9c2d9eabbbe6566c41fdc696fe3befe2aa8d052d
+FROM quay.io/meddleware-org/static-server:0.1.13@sha256:0952b3c64403ccd340827a13f2a4d96beed756a06edb6d5addac7697864e5b5d
 ARG CSP
 ENV CONTENT_SECURITY_POLICY="${CSP}"
 
