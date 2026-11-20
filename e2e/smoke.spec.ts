@@ -32,7 +32,7 @@ test('creating a gate goes through the wallet and shows the transaction', async 
   await connectMockWallet(page)
   await page.getByLabel('Price (SUI)').fill('0.05')
   await page.getByRole('button', { name: 'Next' }).click()
-  await page.getByLabel('NFT name').fill('Test pass')
+  await page.getByLabel('Pass name').fill('Test pass')
   await page.getByRole('button', { name: 'Next' }).click()
   await page.getByRole('button', { name: 'Create gate' }).click()
   // A created gate takes the person to the list of their gates.

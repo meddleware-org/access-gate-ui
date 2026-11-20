@@ -56,7 +56,7 @@ async function airdrop(): Promise<void> {
       label="Airdrop access to"
       placeholder="0x…"
       spellcheck="false"
-      :hint="commissionMist !== null && commissionMist > 0n ? `Each airdrop pays the platform commission of ${mistToSui(commissionMist)} SUI.` : undefined"
+      :hint="commissionMist !== null && commissionMist > 0n ? `Each airdrop pays the platform fee of ${mistToSui(commissionMist)} SUI.` : undefined"
     />
     <UiButton variant="secondary" :busy="busy" :disabled="!recipient" @click="airdrop">{{ busy ? 'Sending…' : 'Airdrop' }}</UiButton>
     <UiNotice v-if="error" type="error" :message="error" />

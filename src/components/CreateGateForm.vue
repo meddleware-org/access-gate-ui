@@ -117,27 +117,27 @@ async function submit(): Promise<void> {
       <fieldset v-if="step === 0">
         <legend>Economics</legend>
         <UiTextField :id="`${id}-price`" v-model="priceSui" type="number" label="Price (SUI)" :hint="priceHint" min="0" step="0.000000001" inputmode="decimal" />
-        <UiTextField :id="`${id}-uses`" v-model="defaultUses" type="number" label="Default credits" hint="0 = unlimited pass; N = NFT granting N upload credits." min="0" step="1" />
-        <UiTextField :id="`${id}-recipient`" v-model="paymentRecipient" label="Payment recipient" hint="Where purchase revenue is sent (after the platform commission)." placeholder="0x…" spellcheck="false" />
+        <UiTextField :id="`${id}-uses`" v-model="defaultUses" type="number" label="Default credits" hint="0 = unlimited pass; N = a pass granting N upload credits." min="0" step="1" />
+        <UiTextField :id="`${id}-recipient`" v-model="paymentRecipient" label="Payment recipient" hint="Where purchase revenue is sent (after the platform fee)." placeholder="0x…" spellcheck="false" />
       </fieldset>
 
       <fieldset v-else-if="step === 1">
         <legend>Appearance</legend>
-        <UiTextField :id="`${id}-name`" v-model="nftName" label="NFT name" placeholder="My access pass" />
-        <UiTextField :id="`${id}-image`" v-model="nftImageUrl" type="url" label="NFT image URL" placeholder="https://…" spellcheck="false" />
-        <UiTextField :id="`${id}-description`" v-model="nftDescription" label="NFT description" placeholder="Grants access to…" />
+        <UiTextField :id="`${id}-name`" v-model="nftName" label="Pass name" placeholder="My access pass" />
+        <UiTextField :id="`${id}-image`" v-model="nftImageUrl" type="url" label="Pass image URL" placeholder="https://…" spellcheck="false" />
+        <UiTextField :id="`${id}-description`" v-model="nftDescription" label="Pass description" placeholder="Grants access to…" />
       </fieldset>
 
       <fieldset v-else>
         <legend>Options</legend>
-        <UiCheckField v-model="soulbound" label="Soulbound (non-transferable NFTs)" />
-        <UiCheckField v-model="autoBurnAtZero" label="Auto-burn NFTs at zero credits" />
+        <UiCheckField v-model="soulbound" label="Soulbound (passes cannot be transferred)" />
+        <UiCheckField v-model="autoBurnAtZero" label="Remove a pass when its credits reach zero" />
 
         <section v-if="restricted" class="policy" aria-labelledby="gate-policy-heading">
           <h4 id="gate-policy-heading">Permanent rules on this deployment</h4>
           <ul>
             <li v-if="policy.freezeRequiresUnpaused">The gate can't be frozen while paused.</li>
-            <li v-if="policy.lockCommissionOnFreeze">Freezing locks in the current platform commission.</li>
+            <li v-if="policy.lockCommissionOnFreeze">Freezing locks in the current platform fee.</li>
             <li v-if="policy.pauseBlocksDecryption">Pausing the gate also stops Seal-protected content from being unlocked.</li>
             <li v-if="policy.pauseBlocksAccess">Pausing the gate also stops passes from being used (e.g. relay uploads).</li>
           </ul>

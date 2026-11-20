@@ -16,7 +16,7 @@ defineA11ySuite(
     'create: appearance': async (page) => {
       await open({ connected: true })(page)
       await page.getByRole('button', { name: 'Next' }).click()
-      await page.getByLabel('NFT name').waitFor()
+      await page.getByLabel('Pass name').waitFor()
     },
     'create: options': async (page) => {
       await open({ connected: true })(page)

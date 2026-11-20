@@ -51,7 +51,7 @@ async function freeze(): Promise<void> {
       <UiNotice type="warning">
         Freezing is <strong>permanent</strong>: it destroys the AdminCap and ends all settings and airdrops for this gate. Purchases and
         consumption continue.
-        <template v-if="gate.policy?.lockCommissionOnFreeze">The current platform commission terms are locked in for all future purchases.</template>
+        <template v-if="gate.policy?.lockCommissionOnFreeze">The current platform fee is locked in for all future purchases.</template>
       </UiNotice>
       <UiTextField :id="`${id}-confirm`" v-model="confirmText" label="Type FREEZE to confirm" placeholder="FREEZE" spellcheck="false" />
       <template #actions="{ close }">

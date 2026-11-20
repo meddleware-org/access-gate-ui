@@ -7,6 +7,7 @@ Releases before 0.1.37 are recorded in the git history only.
 
 ## [Unreleased]
 
+- Wording (copy standard, 2026-11-20): a pass is called a pass, not an NFT (the create form and the settings: Pass name, Pass image URL, Pass description, "Soulbound (passes cannot be transferred)", "Remove a pass when its credits reach zero"), and the platform fee, not the commission. New page description.
 - CI: `HOME=/root` is set on the browser-test command only, not the whole job, so the runner no longer warns that it cannot read
   `/root/.docker/config.json`.
 - `overrides.chrome-launcher: ^1.2.3`: Lighthouse CI (`@lhci/cli` 0.16.1, the newest) still asks for chrome-launcher 0.13, which pulls

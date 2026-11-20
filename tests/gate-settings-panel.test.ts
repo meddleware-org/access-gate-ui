@@ -21,7 +21,7 @@ describe('GateSettingsPanel', () => {
   it('lists one setting per item, each with its own Update button', () => {
     const w = mount(GateSettingsPanel, { props: { gate: gate(0n) } })
     const items = w.findAll('ul.rows > li')
-    expect(items.map((li) => li.find('label').text())).toEqual(['Price (SUI)', 'Payment recipient', 'NFT name', 'NFT image URL', 'NFT description'])
+    expect(items.map((li) => li.find('label').text())).toEqual(['Price (SUI)', 'Payment recipient', 'Pass name', 'Pass image URL', 'Pass description'])
     for (const li of items) expect(li.findAll('button').map((b) => b.text())).toEqual(['Update'])
   })
 

@@ -76,9 +76,9 @@ const fields = computed<Field[]>(() => {
     list.push({ key: 'uses', label: 'Default credits', type: 'number', attrs: { min: '1', step: '1' }, build: () => buildSetDefaultUsesTx(ctx(), BigInt(values.uses || '0')) })
   }
   list.push(
-    { key: 'name', label: 'NFT name', build: () => buildSetNftNameTx(ctx(), values.name) },
-    { key: 'image', label: 'NFT image URL', type: 'url', attrs: { spellcheck: 'false' }, build: buildImageTx },
-    { key: 'description', label: 'NFT description', build: () => buildSetNftDescriptionTx(ctx(), values.description) },
+    { key: 'name', label: 'Pass name', build: () => buildSetNftNameTx(ctx(), values.name) },
+    { key: 'image', label: 'Pass image URL', type: 'url', attrs: { spellcheck: 'false' }, build: buildImageTx },
+    { key: 'description', label: 'Pass description', build: () => buildSetNftDescriptionTx(ctx(), values.description) },
   )
   return list
 })
@@ -112,7 +112,7 @@ async function run(what: string, build: () => Transaction | Promise<Transaction>
         {{ gate.paused ? 'Unpause purchases' : 'Pause purchases' }}
       </UiButton>
       <UiButton variant="ghost" :busy="busy === 'autoburn'" :disabled="busy !== null" @click="run('autoburn', () => buildSetAutoBurnAtZeroTx(ctx(), !gate.autoBurnAtZero))">
-        {{ gate.autoBurnAtZero ? 'Keep spent NFTs as receipts' : 'Auto-burn spent NFTs' }}
+        {{ gate.autoBurnAtZero ? 'Keep spent passes as receipts' : 'Remove passes when their credits reach zero' }}
       </UiButton>
     </p>
 
