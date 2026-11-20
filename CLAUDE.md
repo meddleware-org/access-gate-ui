@@ -123,3 +123,7 @@ confirmation in a dialog. Keep that guard.
   controls (gate config, airdrops, freeze) vs fixed (the deployment ids from `deployments` +
   commission routing to Meddleware — deliberately not configurable). Branding seams
   (`@meddleware/design-tokens`, `AppHeader`). Note the platform-only setters are intentionally hidden.
+
+## Interoperability
+
+- [docs/INTEROP.md](docs/INTEROP.md): the standards this project speaks, what is planned, where to extend it, and what proves each claim.
