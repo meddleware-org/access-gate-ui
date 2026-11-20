@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 [Semantic Versioning](https://semver.org/). Before 0.2.0, breaking changes ship as patch releases.
 Releases before 0.1.37 are recorded in the git history only.
 
-## [Unreleased]
+## [0.1.52] - 2026-11-20
 
 - Wording (copy standard, 2026-11-20): a pass is called a pass, not an NFT (the create form and the settings: Pass name, Pass image URL, Pass description, "Soulbound (passes cannot be transferred)", "Remove a pass when its credits reach zero"), and the platform fee, not the commission. New page description.
 - CI: `HOME=/root` is set on the browser-test command only, not the whole job, so the runner no longer warns that it cannot read
