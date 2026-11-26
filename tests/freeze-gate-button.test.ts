@@ -1,3 +1,5 @@
+// FreezeGateButton: freezing is irreversible, so it fails closed. The dialog opens only on request, the button stays disabled until the exact word is typed,
+// and nothing reaches the wallet otherwise.
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest'
 import { installDialogShim } from '@meddleware/frontend-config/vitest'
 import { mount, flushPromises } from '@vue/test-utils'
@@ -14,22 +16,28 @@ vi.mock('@meddleware/access-gate-client', () => ({ buildMakeGateImmutableTx }))
 
 import FreezeGateButton from '../src/components/FreezeGateButton.vue'
 
+// A minimal gate.
 const gate = { gateId: '0xgate' } as never
 
+/** The first button whose text contains the given text. */
 function findButton(w: ReturnType<typeof mount>, text: string) {
   return w.findAll('button').find((b) => b.text().includes(text))!
 }
 
+// jsdom has no <dialog>; the shared shim provides one.
 beforeAll(installDialogShim)
 
+// dialogOpen(w): is the confirmation dialog open?
 const dialogOpen = (w: ReturnType<typeof mount>) => w.get('dialog').attributes('open') !== undefined
 
+// Clear the mock calls between tests.
 beforeEach(() => {
   executeTx.mockClear()
   adminContext.mockClear()
   buildMakeGateImmutableTx.mockClear()
 })
 
+// The confirmation flow.
 describe('FreezeGateButton (fail-closed confirmation)', () => {
   it('opens the typed confirmation, in a dialog, only after clicking Freeze', async () => {
     const w = mount(FreezeGateButton, { props: { gate } })

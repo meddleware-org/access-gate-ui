@@ -1,7 +1,9 @@
+// The gate-price policy (free gates, the minimum price) and the parsing of the deployment's environment settings.
 import { describe, it, expect } from 'vitest'
 import { gatePriceError } from '../src/gate-price.js'
 import { envFlag, parseMinPrice } from '../src/config.js'
 
+// Free gates need the switch; a paid price must reach the minimum.
 describe('gatePriceError', () => {
   it('allows free gates only when enabled', () => {
     expect(gatePriceError(0n, 500n, true)).toBeNull()
@@ -15,6 +17,7 @@ describe('gatePriceError', () => {
   })
 })
 
+// The deployment's settings are read leniently: anything unrecognised falls back to the default.
 describe('operator config parsing', () => {
   it('envFlag reads common truthy spellings and falls back when unset', () => {
     for (const v of ['true', 'TRUE', '1', 'yes', 'on']) expect(envFlag(v)).toBe(true)

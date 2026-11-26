@@ -6,6 +6,7 @@
 //
 // Gate loading is driven by watching the connected account, so it works whether the connection
 // is made from this app's own header (standalone) or the dashboard's shared control (embedded).
+// Vue, the shared UI components, the stale-result guard, the wallet gate and this app's own modules.
 import { ref, watch } from 'vue'
 import { AppTabNav, UiLiveStatus, UiNotice, UiTabPanel, UiToolIntro, type AppTab } from '@meddleware/ui'
 import { createGeneration } from '@meddleware/web-utils'
@@ -17,19 +18,24 @@ import { useWallet } from '../wallet.js'
 import CreateGateForm from './CreateGateForm.vue'
 import GateList from './GateList.vue'
 
+// The two sections: create a gate, and the gates the wallet administers.
 const TABS: AppTab[] = [
   { id: 'create', label: 'Create gate' },
   { id: 'gates', label: 'My gates' },
 ]
+// The open section.
 const activeTab = ref<string>('create')
 
+/** onTabChange(id): switch section; opening "My gates" re-reads them. */
 function onTabChange(id: string): void {
   activeTab.value = id
   if (id === 'gates') void reloadGates()
 }
 
+// The shared wallet account (null until connected).
 const { account } = useWallet()
 
+// The gates the wallet administers, whether a load is running, and the last load error.
 const gates = ref<OwnedGate[]>([])
 const loadingGates = ref(false)
 const loadError = ref<string | null>(null)
@@ -37,6 +43,7 @@ const loadError = ref<string | null>(null)
 // A slower, older load never overwrites a newer one.
 const generation = createGeneration()
 
+/** reloadGates(): read the wallet's gates; a result that arrives after a newer load began is dropped. */
 async function reloadGates(): Promise<void> {
   const current = generation.begin()
   if (!account.value || !deployed.value) return
@@ -65,6 +72,7 @@ watch(
   { immediate: true },
 )
 
+/** onCreated(): after a gate is created, show the list and re-read it. */
 function onCreated(): void {
   activeTab.value = 'gates'
   void reloadGates()
@@ -74,18 +82,22 @@ function onCreated(): void {
 <template>
   <section aria-labelledby="access-gate-title">
     <h2 id="access-gate-title">Access Gate</h2>
+    <!-- A one-sentence introduction naming the network. -->
     <UiToolIntro>Create and manage on-chain access gates on Sui ({{ network }}).</UiToolIntro>
 
+    <!-- Two blocking notices: the build's policy is unusable, or there is no deployment on this network. -->
     <UiNotice v-if="GATE_POLICY_ERROR" type="error" :message="GATE_POLICY_ERROR" />
 
     <UiNotice v-if="!deployed" type="error" :message="`Access Gate is not available on ${network}. Switch to a network where it is.`" />
 
     <!-- The tab list and its panel always render (every tab controls a live panel); the wallet
          prompt replaces only the panel's content until a wallet is connected. -->
+    <!-- Everything else only when the tool is available on this network. -->
     <template v-else>
       <AppTabNav :tabs="TABS" :model-value="activeTab" id-prefix="access-gate" aria-label="Sections" @update:model-value="onTabChange" />
 
       <UiTabPanel id-prefix="access-gate" :tab="activeTab">
+        <!-- Until a wallet is connected the guard shows its prompt in place of the panel's content. -->
         <WalletGuard message="Connect a Sui wallet to create and manage your access gates." :required-features="['sui:signTransaction']">
           <template v-if="activeTab === 'gates'">
             <UiNotice v-if="loadError" type="error" :message="loadError" />

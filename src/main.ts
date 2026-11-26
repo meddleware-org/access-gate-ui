@@ -1,6 +1,9 @@
+// Entry point of the standalone Access Gate app: design system styles first, the network the build targets, the season, and (in an end-to-end build only) the mock wallet, then mount.
+// Tokens first (they define the CSS variables), then the seasons and the shared reset.
 import '@meddleware/design-tokens/tokens.css'
 import '@meddleware/design-tokens/seasons.css'
 import '@meddleware/ui/reset.css'
+// Vue, the seasonal theme and the shared network selector.
 import { createApp } from 'vue'
 import { useSeason } from '@meddleware/ui'
 import { selectBuiltNetwork } from '@meddleware/wallet-adapter'

@@ -3,6 +3,7 @@
 import { defineShots } from '@meddleware/frontend-config/shots'
 import { freezing, managing, open } from './open.js'
 
+// One screenshot per screen.
 defineShots({
   disconnected: open(),
   create: open({ connected: true }),

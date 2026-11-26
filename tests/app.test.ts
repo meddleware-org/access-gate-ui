@@ -3,6 +3,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 
+// The shared wallet account, as a ref the tests can set.
 const { account } = await vi.hoisted(async () => ({ account: (await import('vue')).ref<{ address: string } | null>(null) }))
 vi.mock('../src/wallet.js', () => ({ useWallet: () => ({ account, disconnect: vi.fn() }) }))
 vi.mock('../src/components/AccessGateView.vue', () => ({ default: { template: '<p class="view">view</p>' } }))
@@ -11,6 +12,7 @@ vi.mock('../src/config.js', () => ({ explorerNetwork: { value: 'testnet' } }))
 
 import App from '../src/App.vue'
 
+// The shell around the view: heading, wallet control, footer links and brand mark.
 describe('App', () => {
   it('is the tool shell around the view', () => {
     const w = mount(App)

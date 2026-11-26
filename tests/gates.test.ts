@@ -1,3 +1,5 @@
+// The bindings between the app and the access_gate client (src/gates.ts): which package and config a transaction is built against, and how a failed
+// transaction or a failed confirmation is reported. The wallet is mocked; the client and the recorded deployment are real.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ACCESS_GATE_ABORTS } from '@meddleware/access-gate-client'
 import { accessGateDeployment } from '@meddleware/access-gate-client/deployments'
@@ -12,15 +14,18 @@ vi.mock('@meddleware/wallet-adapter', () => ({ useNetwork: () => ({ network: net
 
 import { adminContext, buildNewGateTx, errorMessage, executeTx } from '../src/gates.js'
 
+// The recorded testnet deployment and a minimal gate.
 const testnet = accessGateDeployment('testnet')
 const gate = { gateId: '0x' + 'aa'.repeat(32), adminCapId: '0x' + 'bb'.repeat(32) } as never
 
+// Reset the mocks and go back to testnet before every test.
 beforeEach(() => {
   executor.signAndExecute.mockReset()
   executor.waitForTransaction.mockReset()
   networkRef.value = 'testnet'
 })
 
+// Admin calls use the latest package and the recorded platform config; no network without a deployment builds anything.
 describe('deployment ids', () => {
   it('builds admin calls at the latest package with the recorded PlatformConfig', () => {
     expect(adminContext(gate)).toMatchObject({ packageId: testnet.publishedAt, platformConfigId: testnet.platformConfigId })
@@ -37,6 +42,7 @@ describe('deployment ids', () => {
   })
 })
 
+// Success returns the digest; a failed transaction is reported with the abort's meaning; a confirmation failure is never reported as success.
 describe('executeTx', () => {
   it('returns the digest once the transaction is confirmed', async () => {
     executor.signAndExecute.mockResolvedValue({ digest: 'D1', success: true, result: { $kind: 'Transaction' } })

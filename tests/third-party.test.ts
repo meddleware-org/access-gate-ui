@@ -8,13 +8,17 @@ import { join } from 'node:path'
 const root = join(import.meta.dirname, '..')
 const dist = join(root, 'dist')
 
+// Names that would mean a font host, CDN, analytics or tracker.
 const FORBIDDEN = /fonts\.googleapis|fonts\.gstatic|@fontsource|unpkg\.com|jsdelivr|cdnjs|cdn\.|gravatar|google-analytics|googletagmanager|gtag\(|plausible|matomo|hotjar|segment\.(com|io)/i
 
+/** Every file under a directory, recursively. */
 function filesOf(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? filesOf(join(dir, e.name)) : [join(dir, e.name)]))
 }
+// rel(file): the path relative to the repository root.
 const rel = (f: string) => f.slice(root.length + 1)
 
+// No source file names a third party.
 describe('sources', () => {
   const files = [...filesOf(join(root, 'src')).filter((f) => !f.includes('/e2e')), join(root, 'index.html'), ...filesOf(join(root, 'public'))]
   it.each(files.map((f) => [rel(f), f]))('%s names no third-party font, CDN or tracker', (_name, file) => {
@@ -27,6 +31,7 @@ describe('sources', () => {
   })
 })
 
+// The built bundle: no web fonts, and no third-party origin.
 describe.skipIf(!existsSync(dist) && !process.env.REQUIRE_DIST)('production build', () => {
   it('exists', () => expect(existsSync(dist)).toBe(true))
 

@@ -27,20 +27,24 @@ vi.mock('../src/gates.js', () => ({
 
 import CreateGateForm from '../src/components/CreateGateForm.vue'
 
+// The error text the (mocked) configuration reports for an unusable policy.
 const INVALID = 'Invalid gate configuration (E_POLICY_COMBINATION): pause blocks access requires freezeRequiresUnpaused'
 
+/** Click "Next" twice, to reach the form's last step. */
 async function toLastStep(w: ReturnType<typeof mount>): Promise<void> {
   for (const label of ['Next', 'Next']) {
     await w.findAll('button').find((b) => b.text() === label)!.trigger('click')
   }
 }
 
+// Reset the policy error and the mock calls before every test.
 beforeEach(() => {
   config.error = null
   buildNewGateTx.mockClear()
   executeTx.mockClear()
 })
 
+// An unusable configured policy: Create is disabled and nothing reaches the platform read, the transaction builder or the wallet.
 describe('CreateGateForm with an invalid configured policy (F12)', () => {
   it('disables Create and builds nothing when the configuration is invalid', async () => {
     config.error = INVALID
@@ -56,6 +60,7 @@ describe('CreateGateForm with an invalid configured policy (F12)', () => {
     expect(executeTx).not.toHaveBeenCalled()
   })
 
+  // A valid policy leaves Create enabled.
   it('leaves Create enabled for a valid configuration', async () => {
     const w = mount(CreateGateForm, { props: { address: '0xabc' } })
     await flushPromises()

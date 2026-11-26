@@ -11,12 +11,14 @@ vi.mock('../src/gates.js', () => ({
 
 import GateSettingsPanel from '../src/components/GateSettingsPanel.vue'
 
+// gate(uses): a gate with that many default credits.
 const gate = (defaultUses: bigint) =>
   ({
     gateId: '0x1', adminCapId: '0xcap', priceMist: 1_000_000_000n, paymentRecipient: '0xr', defaultUses, soulbound: false,
     autoBurnAtZero: false, paused: false, frozen: false, freeFeePaid: false, nftName: 'Pass', nftImageUrl: '', nftDescription: '',
   }) as never
 
+// One setting per list item; the credits setting appears only for gates that have credits.
 describe('GateSettingsPanel', () => {
   it('lists one setting per item, each with its own Update button', () => {
     const w = mount(GateSettingsPanel, { props: { gate: gate(0n) } })

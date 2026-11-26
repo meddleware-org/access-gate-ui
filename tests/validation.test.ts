@@ -1,6 +1,9 @@
+// The input check for the image address written on-chain into every pass: empty, https and data:image are accepted; every other scheme, malformed values and
+// overlong values are refused.
 import { describe, it, expect } from 'vitest'
 import { imageUrlError, MAX_IMAGE_URL_LENGTH } from '../src/validation.js'
 
+// Accepted and refused values.
 describe('imageUrlError', () => {
   it('accepts empty, https and data:image values', () => {
     expect(imageUrlError('')).toBeNull()

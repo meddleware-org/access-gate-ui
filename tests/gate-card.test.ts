@@ -1,20 +1,24 @@
+// GateCard: the link to Sealed Storage is built safely from chain data, and the price badge shows the exact amount.
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 
 import GateCard from '../src/components/GateCard.vue'
 
+// gate(id, price): the smallest gate object the card reads.
 const gate = (gateId: string, priceMist = 0n) =>
   ({
     gateId, adminCapId: '0xcap', priceMist, paymentRecipient: '0xr', defaultUses: 0n, soulbound: false,
     autoBurnAtZero: false, paused: false, frozen: false, nftName: 'Pass', nftImageUrl: '', nftDescription: '',
   }) as never
 
+// sealLink(id): mount the card with its management parts stubbed and read the Sealed Storage link.
 const sealLink = (gateId: string) =>
   mount(GateCard, {
     props: { gate: gate(gateId) },
     global: { stubs: { GateSettingsPanel: true, AirdropForm: true, FreezeGateButton: true } },
   }).find('a.seal-link').attributes('href')
 
+// The link opens Sealed Storage on this gate, with the id encoded so chain data cannot add parameters or change the path.
 describe('GateCard seal link', () => {
   it('opens sealed-storage-ui on this gate', () => {
     const id = '0x' + 'ab'.repeat(32)
@@ -26,6 +30,7 @@ describe('GateCard seal link', () => {
   })
 })
 
+// The price is shown exactly, in SUI.
 describe('GateCard price', () => {
   const badge = (priceMist: bigint) =>
     mount(GateCard, {

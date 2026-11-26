@@ -10,8 +10,10 @@ import { join } from 'node:path'
 const require = createRequire(import.meta.url)
 const tokenCss = readFileSync(require.resolve('@meddleware/design-tokens/tokens.css'), 'utf8')
 const seasonCss = readFileSync(require.resolve('@meddleware/design-tokens/seasons.css'), 'utf8')
+// Every custom property the design tokens and seasons define.
 const defined = new Set([...(tokenCss + seasonCss).matchAll(/^\s*(--[\w-]+)\s*:/gm)].map((m) => m[1]))
 
+/** The .vue files under a directory, recursively. */
 function vueFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
     e.isDirectory() ? vueFiles(join(dir, e.name)) : e.name.endsWith('.vue') ? [join(dir, e.name)] : [],
@@ -21,6 +23,7 @@ function vueFiles(dir: string): string[] {
 /** Names `@meddleware/ui` or wallet-adapter define for their own components, if the app reads any. */
 const locallyDefined = (css: string) => new Set([...css.matchAll(/^\s*(--[\w-]+)\s*:/gm)].map((m) => m[1]))
 
+// Every property a component reads must be defined by the tokens or by the file itself.
 describe('custom properties read by the app', () => {
   const files = vueFiles(join(import.meta.dirname, '..', 'src'))
 

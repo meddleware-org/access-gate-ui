@@ -4,6 +4,7 @@ import { expect, test } from '@playwright/test'
 import { offline } from '@meddleware/frontend-config/look'
 import { E2E_ADDRESS, connectMockWallet } from '@meddleware/frontend-config/wallet'
 
+// Landmarks, the wallet prompt, connecting through the app's own dialog, and the stubbed gates.
 test('mounts, connects the mock wallet and lists the gates, without an uncaught error', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
@@ -26,6 +27,7 @@ test('mounts, connects the mock wallet and lists the gates, without an uncaught 
   expect(errors).toEqual([])
 })
 
+// Creating a gate: the three steps, the wallet, and the list that follows.
 test('creating a gate goes through the wallet and shows the transaction', async ({ page }) => {
   await offline(page)
   await page.goto('/')
@@ -40,11 +42,13 @@ test('creating a gate goes through the wallet and shows the transaction', async 
   await expect(page.getByRole('heading', { level: 3, name: 'Studio pass' })).toBeVisible()
 })
 
+// The freeze button stays disabled until the word is typed exactly (a different case does not count).
 test('freezing needs the typed word', async ({ page }) => {
   await offline(page)
   await page.goto('/')
   await connectMockWallet(page)
   await page.getByRole('tab', { name: 'My gates', exact: true }).click()
+  // The gate's own card, so the dialog is looked up inside it.
   const card = page.getByRole('listitem').filter({ has: page.getByRole('heading', { name: 'Studio pass' }) })
   await card.getByText('Manage', { exact: true }).click()
   await card.getByRole('button', { name: 'Freeze gate (irreversible)' }).click()

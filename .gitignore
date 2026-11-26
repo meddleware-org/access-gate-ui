@@ -1,15 +1,20 @@
+# What git ignores in this repository.
+# Installed packages, build output and tool caches.
 node_modules/
 dist/
 target/
 .wrangler/
 *.tsbuildinfo
+# Operating-system file-manager droppings.
 .DS_Store
 
 # Local environment overrides (never commit)
+# Local environment overrides are never committed; the documented example is.
 .env
 .env.*
 !.env.example
 
+# Browser-test output.
 test-results/
 
 # Lighthouse CI

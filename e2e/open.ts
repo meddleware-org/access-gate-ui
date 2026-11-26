@@ -1,3 +1,5 @@
+// Helpers the Access Gate browser tests share: open the built app with every request that leaves localhost refused, connect the mock wallet,
+// and reach the management and freeze screens.
 import type { Page } from '@playwright/test'
 import { offline } from '@meddleware/frontend-config/look'
 import { connectMockWallet } from '@meddleware/frontend-config/wallet'
