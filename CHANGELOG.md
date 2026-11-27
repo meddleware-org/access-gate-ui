@@ -7,6 +7,8 @@ Releases before 0.1.37 are recorded in the git history only.
 
 ## [Unreleased]
 
+## [0.1.53] - 2026-11-27
+
 - Documentation pass (workspace documentation standard): every file has a header and line-level comments, every declaration a doc comment; `CONTRIBUTING.md` is new. The files synced from `@meddleware/frontend-config` now carry that package's commented templates (`npx mw-sync --write`). The npm-publish workflow's "not configured" warning had a garbled word ("--provenanceing") and now reads "npm publishing is not configured". The built bundle is unchanged apart from one header comment in `index.html`.
 
 ## [0.1.52] - 2026-11-20
